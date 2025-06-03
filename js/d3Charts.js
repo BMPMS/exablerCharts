@@ -12,14 +12,15 @@ const scatterChart = ()  => {
         const margin = { left: 80, right: 20, top: 50, bottom: 60 };
         const { data, dotAttributes, fontSize, labels, xVar, yVar } = props;
 
-        const xExtent = d3.extent(data, (d) => d[xVar]);
+        const xExtent = d3.extent(data, (d) => +d[xVar]);
 
+        debugger;
         const xScale = d3
             .scaleLinear()
             .domain(xExtent)
             .range([0, chartWidth - margin.left - margin.right]);
 
-        const yExtent = d3.extent(data, (d) => d[yVar]);
+        const yExtent = d3.extent(data, (d) => +d[yVar]);
 
         const yScale = d3
             .scaleLinear()
@@ -108,8 +109,8 @@ const scatterChart = ()  => {
         dotGroup
             .select(".dotCircle")
             .attr("r", radius)
-            .attr("cx", (d) => xScale(d[xVar]))
-            .attr("cy", (d) => yScale(d[yVar]))
+            .attr("cx", (d) => xScale(+d[xVar]))
+            .attr("cy", (d) => yScale(+d[yVar]))
             .attr("fill-opacity", opacity)
             .attr("stroke", defaultFill)
             .attr("stroke-width", strokeWidth)
