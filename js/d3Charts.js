@@ -5,6 +5,53 @@ const measureWidth = (text, fontSize) => {
     return context.measureText(text).width;
 }
 
+const drawLegend = (svg, legendData, fontSize, width, format) => {
+
+    let accumulativeX = 0;
+    const legendHeight = 18;
+
+    legendData.forEach((d) => {
+        d.xPos = accumulativeX;
+        accumulativeX += measureWidth(d.group, fontSize + 2) + 35;
+    })
+    const menuGroup = svg.selectAll(".menuGroup")
+        .data(legendData)
+        .join((group) => {
+            const enter = group.append("g").attr("class", "menuGroup");
+            enter.append("rect").attr("class","menuRect");
+            enter.append("text").attr("class","menuLabel");
+            enter.append("text").attr("class","menuLabelResult");
+            return enter;
+        });
+
+    menuGroup.attr("transform", `translate(${(width - accumulativeX)/2},30)`)
+
+    menuGroup.select(".menuRect")
+        .attr("x",(d) => d.xPos)
+        .attr("y",1)
+        .attr("width",20)
+        .attr("height",legendHeight)
+        .attr("fill",(d) => d.fill)
+        .attr("rx",2)
+        .attr("ry",2);
+
+    menuGroup.select(".menuLabel")
+        .attr("x",(d) => d.xPos + 25)
+        .attr("y",-4 + legendHeight/2)
+        .style("dominant-baseline","middle")
+        .attr("font-size",fontSize)
+        .attr("fill","#484848")
+        .text((d) => d.group);
+
+    menuGroup.select(".menuLabelResult")
+        .attr("x",(d) => d.xPos + 25)
+        .attr("y",9 + legendHeight/2)
+        .style("dominant-baseline","middle")
+        .attr("font-size",fontSize-2)
+        .attr("fill","#808080")
+        .text((d) => d3.format(format)(d.total));
+}
+
 const scatterChart = ()  => {
 
     let props = {};
@@ -12,7 +59,6 @@ const scatterChart = ()  => {
     let chartWidth = 0;
     let chartHeight = 0;
     let brushResultsCallback = "";
-    let svg = undefined;
 
     const chart = (svg) => {
 
@@ -240,7 +286,7 @@ const scatterChart = ()  => {
 }
 
 
-const horizontalBarChart = ()  => {
+const verticalBarChart = ()  => {
 
     let props = {};
     let title = "";
@@ -285,7 +331,7 @@ const horizontalBarChart = ()  => {
 }
 
 
-const verticalBarChart = ()  => {
+const horizontalBarChart = ()  => {
 
     let props = {};
     let title = "";
@@ -297,7 +343,7 @@ const verticalBarChart = ()  => {
 
         const margin = { left: 80, right: 30, top: 70, bottom: 60 };
 
-        const { data, barAttributes,  format, labels, xVar, ySort,yVar, topX } = props;
+        const { data, barAttributes,  format, greaterThan,labels, xVar, ySort,yVar, topX } = props;
 
         let barData =
             Array.from(d3.group(data, (g) => g[yVar]))
@@ -310,16 +356,14 @@ const verticalBarChart = ()  => {
                 },[])
                 .sort((a,b) => d3[ySort](a.total,b.total))
 
-        if(topX !== null){
-            const remaining = barData.slice(topX, barData.length);
-            const remainingTotal = d3.sum(remaining, (d) => d.total);
+        if(topX && topX !== null){
             barData = barData.slice(0,topX);
-           // barData.push({
-          //      yVar: "remaining",
-           //     total: remainingTotal
-           // })
         }
-        const yBands =  barData.map((m) => m.yVar);
+        if(greaterThan && greaterThan !== null){
+            barData = barData.filter((f) => f.total > greaterThan);
+        }
+
+        const yBands = barData.map((m) => m.yVar);
 
         const maxLabelWidth = d3.max(yBands, (d) => measureWidth(d));
         margin.left = maxLabelWidth + 80;
@@ -333,7 +377,7 @@ const verticalBarChart = ()  => {
 
         const yScale = d3.scaleBand()
             .domain(yBands)
-            .range([chartHeight - margin.top - margin.bottom, 0]);
+            .range([0,chartHeight - margin.top - margin.bottom]);
 
         const fontSize = Math.min(yScale.bandwidth() * 0.75, 14);
 
@@ -468,7 +512,6 @@ const verticalBarChart = ()  => {
         return chart;
     };
 
-
     chart.title =  (value) => {
         if (!value) return title;
         title = value;
@@ -490,6 +533,97 @@ const verticalBarChart = ()  => {
     chart.chartClass =  (value) => {
         if (!value) return chartClass;
         chartClass = value;
+        return chart;
+    };
+
+    chart.props =  (value) => {
+        if (!value) return props;
+        props = value;
+        return chart;
+    };
+
+    return chart;
+}
+
+
+
+const pieChart = ()  => {
+
+    let props = {};
+    let title = "";
+    let chartWidth = 0;
+    let chartHeight = 0;
+
+    const chart = (svg) => {
+
+        const margin = {left: 50, right: 50, top: 80,bottom: 30};
+        const circleRadius = Math.min(
+            chartWidth - margin.left - margin.right,
+            chartHeight - margin.top - margin.bottom)/2;
+
+        const {data, donutWidthRatio,fontSize, format, pieVars, pieColors} = props;
+
+        const pieData = pieVars.reduce((acc, entry,index) => {
+            const valueTotal = d3.sum(data, (d) => d[entry]);
+            acc.push({
+                group: entry,
+                total: valueTotal,
+                fill: pieColors[index]
+            })
+            return acc;
+        },[])
+
+        drawLegend(svg,pieData,fontSize, chartWidth,format);
+
+        const donutWidth = circleRadius * donutWidthRatio;
+
+        const pie = d3
+            .pie()
+            .startAngle(0)
+            .endAngle(Math.PI * 2)
+            .value((d) => d.total);
+
+        const arcData = pie(pieData);
+
+        const arc = d3
+            .arc()
+            .innerRadius(circleRadius - donutWidth)
+            .outerRadius(circleRadius);
+
+        const pathGroup = svg
+            .selectAll(".pathGroup")
+            .data(arcData)
+            .join((group) => {
+                const enter = group.append("g").attr("class", "pathGroup");
+                enter.append("path").attr("class", "arcPath");
+                return enter;
+            });
+
+        pathGroup
+            .select(".arcPath")
+            .attr("d", arc)
+            .attr("fill", (d) => d.data.fill)
+            .attr("transform", `translate(${chartWidth/2},${margin.top + circleRadius})`);
+
+
+        return chart;
+    };
+
+    chart.title =  (value) => {
+        if (!value) return title;
+        title = value;
+        return chart;
+    };
+
+    chart.chartWidth =  (value) => {
+        if (!value) return chartWidth;
+        chartWidth = value;
+        return chart;
+    };
+
+    chart.chartHeight =  (value) => {
+        if (!value) return chartHeight;
+        chartHeight = value;
         return chart;
     };
 

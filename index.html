@@ -13,6 +13,8 @@
     <div class="grid-item" id="chart2Div"></div>
     <div class="grid-item" id="chart3Div"></div>
     <div class="grid-item" id="chart4Div"></div>
+    <div class="grid-item" id="chart5Div"></div>
+    <div class="grid-item" id="chart6Div"></div>
 </div>
 
 <script type="module">
@@ -51,16 +53,26 @@
 
             newScatterChart(svg);
         }
-        if(type === "vBar"){
+        if(type === "hBar"){
             // load charts
-            const newVerticalBarChart = verticalBarChart()
+            const newHorizontalBarChart = horizontalBarChart()
                 .chartWidth(clientWidth)
                 .chartHeight(clientHeight)
                 .chartClass(divId)
                 .title(title)
                 .props(props);
 
-            newVerticalBarChart(svg);
+            newHorizontalBarChart(svg);
+        }
+
+        if(type === "pie"){
+            const newPieChart = pieChart()
+                .chartWidth(clientWidth)
+                .chartHeight(clientHeight)
+                .title(title)
+                .props(props);
+
+            newPieChart(svg);
         }
     }
 
@@ -103,7 +115,7 @@
     }
     drawChart("scatter","chart2Div",scatter2Props, "Scatter Log Scale");
 
-    const vBar1Props =  {
+    const hBar1Props =  {
         data: sampleData,
         barAttributes: {
             cornerRadius: 2,
@@ -113,14 +125,13 @@
         fontSize: 14,
         labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
         tooltipVars: ["Net Weight Measure","Item Charge Amount"],
-        topX: null,
         xVar: "Item Charge Amount",
         yVar: "Non Preferential Country Code",
-        ySort: "ascending",
+        ySort: "descending",
     }
-    drawChart("vBar","chart3Div",vBar1Props, "Vertical Bar");
+    drawChart("hBar","chart3Div",hBar1Props, "Horizontal Bar");
 
-    const vBar2Props =  {
+    const hBar2Props =  {
         data: sampleData,
         barAttributes: {
             cornerRadius: 2,
@@ -132,10 +143,36 @@
         topX: 15,
         xVar: "Item Charge Amount",
         yVar: "Commodity Code",
-        ySort: "ascending",
+        ySort: "descending",
     }
-    drawChart("vBar","chart4Div",vBar2Props, "Vertical Bar Top 15");
+    drawChart("hBar","chart4Div",hBar2Props, "Horizontal Bar Top 15");
 
+    const hBar3Props =  {
+        data: sampleData,
+        barAttributes: {
+            cornerRadius: 2,
+            fill: "#3182bd"
+        },
+        format: {x:",.0f",y:""},
+        labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+        tooltipVars: ["Net Weight Measure","Item Charge Amount"],
+        greaterThan: 10000,
+        xVar: "Item Charge Amount",
+        yVar: "Commodity Code",
+        ySort: "descending",
+    }
+    drawChart("hBar","chart5Div",hBar3Props, "Horizontal Bar - greater than 10,000 filter");
+
+    const pieProps = {
+        data: sampleData,
+        fontSize: 14,
+        format:",.0f",
+        pieVars: ["DTF.Duty.Amount","DTF.Duty.Relieved"],
+        pieColors: ["#3182bd","#A0A0A0"],
+        donutWidthRatio: 0.2
+    }
+
+    drawChart("pie","chart6Div",pieProps,"Pie Chart")
 
 
 </script>
