@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="stylesheet" href="css/d3Charts.css"/>
+<link href='https://fonts.googleapis.com/css?family=Merriweather' rel='stylesheet'>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="js/d3Charts.js"></script>
+<title>Chart Components</title>
+<body>
+<div class="grid-container">
+    <div class="grid-item" id="chart1Div"></div>
+    <div class="grid-item" id="chart2Div"></div>
+    <div class="grid-item" id="chart3Div"></div>
+    <div class="grid-item" id="chart4Div"></div>
+</div>
+
+<script type="module">
+
+
+    const getChartData = async () => {
+        const data = await d3.csv("data/sampleData.csv");
+        return data;
+
+    }
+
+    const drawChart = (type,divId,props) => {
+        const div = d3.select(`#${divId}`);
+        const {clientWidth, clientHeight} = div.node();
+
+        let svg = div.select("svg");
+        if (svg.node() === null) {
+            svg = div
+                .append("svg")
+                .style("background-color","white")
+                .attr("width", clientWidth)
+                .attr("height",clientHeight);
+        }
+        if(type === "scatter"){
+            // load charts
+            const newScatterChart = scatterChart()
+                .chartWidth(clientWidth)
+                .chartHeight(clientHeight)
+                .props(props);
+
+            newScatterChart(svg);
+        }
+    }
+
+    const sampleData = await getChartData();
+
+    const scatter1Props =  {
+        data: sampleData,
+        dotAttributes: {
+            radius: 8,
+            opacity: 0.4,
+            defaultFill: "#3182bd",
+            strokeWidth: 0.5
+        },
+        fontSize: 14,
+        labels: { xAxis: "Net Weight (kg)", yAxis: "Item Charge Amount (&#163;)" },
+        xVar: "Net Weight Measure",
+        yVar: "Item Charge Amount",
+        colorVar: "Non Preferential Country Code"
+    }
+    drawChart("scatter","chart1Div",scatter1Props);
+
+
+
+</script>
+</body>
+</html>

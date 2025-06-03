@@ -1,0 +1,32 @@
+body, svg {
+    font-family: 'Merriweather', serif;
+
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    padding: 20px;
+    background: #f4f4f4;
+    font-family: sans-serif;
+}
+
+.grid-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* or space-between / space-around */
+    gap: 5px;
+}
+
+.grid-item {
+    flex: 1 1 600px; /* Grow/Shrink/Basis */
+    max-width: 600px;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
