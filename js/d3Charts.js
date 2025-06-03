@@ -231,7 +231,9 @@ const scatterChart = ()  => {
             .on("brush", brushed)
             .on("end",(event) => {
                 if(event.selection === null){
+                    currentBrushSelection = [[0,0],[0,0]]
                     svg.selectAll(".dotCircle").attr("fill", defaultFill);
+                    brushResultsCallback([])
                 }
             });
 
