@@ -515,7 +515,7 @@ const horizontalBarChart = ()  => {
                 const currentGroup = d3.select(event.currentTarget);
                 currentGroup.raise();
                 svg.selectAll(".barRect").attr("fill-opacity",0.2);
-                currentGroup.select(".barRect").attr("fill-opacity",1);
+                currentGroup.selectAll(".barRect").attr("fill-opacity",1);
                 let tooltipText = "";
                 tooltipText += `<strong>${yVar}:</strong> ${d.yVar}<br>`
                 xVars.forEach((xVar) => {
