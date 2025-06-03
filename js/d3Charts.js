@@ -228,7 +228,12 @@ const scatterChart = ()  => {
         // brush
         const brush = d3.brush()
             .extent(brushExtent)
-            .on("brush", brushed);
+            .on("brush", brushed)
+            .on("end",(event) => {
+                if(event.selection === null){
+                    svg.selectAll(".dotCircle").attr("fill", defaultFill);
+                }
+            });
 
         // call brush and set to full
         brushGroup
