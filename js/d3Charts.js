@@ -181,7 +181,7 @@ const scatterChart = ()  => {
             d3.select(".chartTooltip")
                 .style("visibility","visible")
                 .style("left",`${event.x + 10}px`)
-                .style("top",`${event.y}px`)
+                .style("top",`${event.pageY}px`)
                 .html(tooltipText)
         })
             .on("mouseout",() => {
@@ -343,7 +343,7 @@ const horizontalBarChart = ()  => {
 
         const margin = { left: 80, right: 30, top: 70, bottom: 60 };
 
-        const { data, barAttributes,  format, greaterThan,labels, xVar, ySort,yVar, topX } = props;
+        const { data, barAttributes,  format, greaterThan,labels,  topX, xVar, ySort,yVar } = props;
 
         let barData =
             Array.from(d3.group(data, (g) => g[yVar]))
@@ -472,7 +472,26 @@ const horizontalBarChart = ()  => {
                 return enter;
             });
 
-        barGroup.attr("transform", `translate(${margin.left},${margin.top})`);
+        barGroup.attr("transform", `translate(${margin.left},${margin.top})`)
+            .on("mousemove", (event,d) => {
+                const currentGroup = d3.select(event.currentTarget);
+                currentGroup.raise();
+                svg.selectAll(".barRect").attr("fill-opacity",0.2);
+                currentGroup.select(".barRect").attr("fill-opacity",1);
+                let tooltipText = "";
+                tooltipText += `<strong>${yVar}:</strong> ${d.yVar}<br>`
+                tooltipText += `<strong>${xVar}:</strong> ${d3.format(format.x)(d.total)}<br>`
+                d3.select(".chartTooltip")
+                    .style("visibility","visible")
+                    .style("left",`${event.x + 10}px`)
+                    .style("top",`${event.pageY}px`)
+                    .html(tooltipText)
+            })
+            .on("mouseout",() => {
+                svg.selectAll(".barRect").attr("fill-opacity",1);
+                d3.select(".chartTooltip")
+                    .style("visibility","hidden");
+            });
 
         barGroup
             .select(".barClipPath")
@@ -494,10 +513,11 @@ const horizontalBarChart = ()  => {
             .attr("y", (d) => yScale(d.yVar))
             .attr("width", (d) => xScale(d.total) + cornerRadius)
             .attr("height", barHeight - 2)
-            .attr("fill", (d) => d.yVar === "remaining" ? "grey" : fill);
+            .attr("fill",  fill);
 
         barGroup
             .select(".barLabel")
+            .attr("pointer-events", "none")
             .attr("x", (d) => xScale(d.total))
             .attr("dx", (d) => measureWidth(d3.format(format.x)(d.total),fontSize) + 10 < xScale(d.total) ? -3 : 3)
             .attr("y", (d) => yScale(d.yVar)  + barHeight/2)
@@ -603,7 +623,22 @@ const pieChart = ()  => {
             .select(".arcPath")
             .attr("d", arc)
             .attr("fill", (d) => d.data.fill)
-            .attr("transform", `translate(${chartWidth/2},${margin.top + circleRadius})`);
+            .attr("transform", `translate(${chartWidth/2},${margin.top + circleRadius})`)
+            .on("mousemove", (event,d) => {
+                svg.selectAll(".arcPath").attr("fill-opacity",0.2);
+                d3.select(event.currentTarget).attr("fill-opacity",1);
+                const tooltipText = `<strong>${d.data.group}:</strong> ${d3.format(format)(d.data.total)}<br>`
+                d3.select(".chartTooltip")
+                    .style("visibility","visible")
+                    .style("left",`${event.x + 10}px`)
+                    .style("top",`${event.pageY}px`)
+                    .html(tooltipText)
+            })
+            .on("mouseout",() => {
+                svg.selectAll(".arcPath").attr("fill-opacity",1);
+                d3.select(".chartTooltip")
+                    .style("visibility","hidden");
+            });;
 
 
         return chart;
