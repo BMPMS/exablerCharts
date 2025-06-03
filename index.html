@@ -106,7 +106,6 @@
     const vBar1Props =  {
         data: sampleData,
         barAttributes: {
-            barHeight: 20,
             cornerRadius: 2,
             fill: "#3182bd"
         },
@@ -114,11 +113,29 @@
         fontSize: 14,
         labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
         tooltipVars: ["Net Weight Measure","Item Charge Amount"],
+        topX: null,
         xVar: "Item Charge Amount",
         yVar: "Non Preferential Country Code",
-        ySort: "ascending"
+        ySort: "ascending",
     }
     drawChart("vBar","chart3Div",vBar1Props, "Vertical Bar");
+
+    const vBar2Props =  {
+        data: sampleData,
+        barAttributes: {
+            cornerRadius: 2,
+            fill: "#3182bd"
+        },
+        format: {x:",.0f",y:""},
+        labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+        tooltipVars: ["Net Weight Measure","Item Charge Amount"],
+        topX: 15,
+        xVar: "Item Charge Amount",
+        yVar: "Commodity Code",
+        ySort: "ascending",
+    }
+    drawChart("vBar","chart4Div",vBar2Props, "Vertical Bar Top 15");
+
 
 
 </script>

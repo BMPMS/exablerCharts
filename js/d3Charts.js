@@ -297,9 +297,9 @@ const verticalBarChart = ()  => {
 
         const margin = { left: 80, right: 30, top: 70, bottom: 60 };
 
-        const { data, barAttributes, fontSize, format, labels, xVar, ySort,yVar } = props;
+        const { data, barAttributes,  format, labels, xVar, ySort,yVar, topX } = props;
 
-        const barData =
+        let barData =
             Array.from(d3.group(data, (g) => g[yVar]))
                 .reduce((acc, entry) => {
                     acc.push({
@@ -310,17 +310,32 @@ const verticalBarChart = ()  => {
                 },[])
                 .sort((a,b) => d3[ySort](a.total,b.total))
 
+        if(topX !== null){
+            const remaining = barData.slice(topX, barData.length);
+            const remainingTotal = d3.sum(remaining, (d) => d.total);
+            barData = barData.slice(0,topX);
+           // barData.push({
+          //      yVar: "remaining",
+           //     total: remainingTotal
+           // })
+        }
+        const yBands =  barData.map((m) => m.yVar);
+
+        const maxLabelWidth = d3.max(yBands, (d) => measureWidth(d));
+        margin.left = maxLabelWidth + 80;
+
         const xExtent = d3.extent(barData, (d) => d.total);
 
         const xScale = d3.scaleLinear()
             .domain(xExtent)
             .range([0, chartWidth - margin.left - margin.right]).nice();
 
-        const yBands =  barData.map((m) => m.yVar);
 
         const yScale = d3.scaleBand()
             .domain(yBands)
             .range([chartHeight - margin.top - margin.bottom, 0]);
+
+        const fontSize = Math.min(yScale.bandwidth() * 0.75, 14);
 
         let titleLabel = svg.select(".titleLabel");
         let xAxisLabel = svg.select(".xAxisLabel");
@@ -397,8 +412,9 @@ const verticalBarChart = ()  => {
             .attr("fill", "grey")
             .attr("font-size", fontSize);
 
-        const {barHeight, cornerRadius, fill} = barAttributes;
+        const { cornerRadius, fill} = barAttributes;
 
+        const barHeight = yScale.bandwidth();
 
         const barGroup = svg
             .selectAll(".barGroup")
@@ -434,7 +450,7 @@ const verticalBarChart = ()  => {
             .attr("y", (d) => yScale(d.yVar))
             .attr("width", (d) => xScale(d.total) + cornerRadius)
             .attr("height", barHeight - 2)
-            .attr("fill", fill);
+            .attr("fill", (d) => d.yVar === "remaining" ? "grey" : fill);
 
         barGroup
             .select(".barLabel")
