@@ -51,6 +51,17 @@
 
             newScatterChart(svg);
         }
+        if(type === "vBar"){
+            // load charts
+            const newVerticalBarChart = verticalBarChart()
+                .chartWidth(clientWidth)
+                .chartHeight(clientHeight)
+                .chartClass(divId)
+                .title(title)
+                .props(props);
+
+            newVerticalBarChart(svg);
+        }
     }
 
     const sampleData = await getChartData();
@@ -92,6 +103,22 @@
     }
     drawChart("scatter","chart2Div",scatter2Props, "Scatter Log Scale");
 
+    const vBar1Props =  {
+        data: sampleData,
+        barAttributes: {
+            barHeight: 20,
+            cornerRadius: 2,
+            fill: "#3182bd"
+        },
+        format: {x:",.0f",y:""},
+        fontSize: 14,
+        labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+        tooltipVars: ["Net Weight Measure","Item Charge Amount"],
+        xVar: "Item Charge Amount",
+        yVar: "Non Preferential Country Code",
+        ySort: "ascending"
+    }
+    drawChart("vBar","chart3Div",vBar1Props, "Vertical Bar");
 
 
 </script>
