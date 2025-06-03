@@ -15,6 +15,8 @@
     <div class="grid-item" id="chart4Div"></div>
     <div class="grid-item" id="chart5Div"></div>
     <div class="grid-item" id="chart6Div"></div>
+    <div class="grid-item" id="chart7Div"></div>
+    <div class="grid-item" id="chart8Div"></div>
 </div>
 
 <script type="module">
@@ -120,12 +122,12 @@
         data: sampleData,
         barAttributes: {
             cornerRadius: 2,
-            fill: "#3182bd"
+            fill: ["#3182bd"]
         },
         format: {x:",.0f",y:""},
         fontSize: 14,
         labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
-        xVar: "Item Charge Amount",
+        xVars: ["Item Charge Amount"],
         yVar: "Non Preferential Country Code",
         ySort: "descending",
     }
@@ -135,13 +137,12 @@
         data: sampleData,
         barAttributes: {
             cornerRadius: 2,
-            fill: "#3182bd"
+            fill: ["#3182bd"]
         },
         format: {x:",.0f",y:""},
         labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
-        tooltipVars: ["Commodity Code","Item Charge Amount"],
         topX: 15,
-        xVar: "Item Charge Amount",
+        xVars: ["Item Charge Amount"],
         yVar: "Commodity Code",
         ySort: "descending",
     }
@@ -151,17 +152,32 @@
         data: sampleData,
         barAttributes: {
             cornerRadius: 2,
-            fill: "#3182bd"
+            fill: ["#3182bd"]
         },
         format: {x:",.0f",y:""},
         labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
-        tooltipVars: ["Commodity Code","Item Charge Amount"],
         greaterThan: 10000,
-        xVar: "Item Charge Amount",
+        xVars: ["Item Charge Amount"],
         yVar: "Commodity Code",
         ySort: "descending",
     }
     drawChart("hBar","chart5Div",hBar3Props, "Horizontal Bar - greater than 10,000 filter");
+
+    const hBar4Props =  {
+        data: sampleData,
+        barAttributes: {
+            cornerRadius: 2,
+            fill: ["#3182bd","#A0A0A0"]
+        },
+        format: {x:",.0f",y:""},
+        labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+        xVars: ["DTF.Duty.Amount","DTF.Duty.Relieved"],
+        yVar: "Non Preferential Country Code",
+        greaterThan: 5,
+        ySort: "descending",
+    }
+    drawChart("hBar","chart7Div",hBar4Props, "Horizontal Bar - two columns");
+
 
     const pieProps = {
         data: sampleData,

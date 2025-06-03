@@ -5,10 +5,10 @@ const measureWidth = (text, fontSize) => {
     return context.measureText(text).width;
 }
 
-const drawLegend = (svg, legendData, fontSize, width, format) => {
+const drawLegend = (svg, legendData, fontSize, width, format, translateY) => {
 
     let accumulativeX = 0;
-    const legendHeight = 18;
+    const legendHeight = 12;
 
     legendData.forEach((d) => {
         d.xPos = accumulativeX;
@@ -24,7 +24,7 @@ const drawLegend = (svg, legendData, fontSize, width, format) => {
             return enter;
         });
 
-    menuGroup.attr("transform", `translate(${(width - accumulativeX)/2},30)`)
+    menuGroup.attr("transform", `translate(${(width - accumulativeX)/2},${translateY})`)
 
     menuGroup.select(".menuRect")
         .attr("x",(d) => d.xPos)
@@ -37,7 +37,7 @@ const drawLegend = (svg, legendData, fontSize, width, format) => {
 
     menuGroup.select(".menuLabel")
         .attr("x",(d) => d.xPos + 25)
-        .attr("y",-4 + legendHeight/2)
+        .attr("y",(d) => d.total ? 0 : 3 + legendHeight/2)
         .style("dominant-baseline","middle")
         .attr("font-size",fontSize)
         .attr("fill","#484848")
@@ -49,7 +49,7 @@ const drawLegend = (svg, legendData, fontSize, width, format) => {
         .style("dominant-baseline","middle")
         .attr("font-size",fontSize-2)
         .attr("fill","#808080")
-        .text((d) => d3.format(format)(d.total));
+        .text((d) => d.total ? d3.format(format)(d.total) : "");
 }
 
 const scatterChart = ()  => {
@@ -350,24 +350,44 @@ const horizontalBarChart = ()  => {
 
         const margin = { left: 80, right: 30, top: 70, bottom: 60 };
 
-        const { data, barAttributes,  format, greaterThan,labels,  topX, xVar, ySort,yVar } = props;
+        const { data, barAttributes,  format, greaterThan,labels,  topX, xVars, ySort,yVar } = props;
+
+        if(xVars.length > 1){
+            const legendData = xVars.reduce((acc, entry,index) => {
+                acc.push({
+                    group: entry,
+                    fill: barAttributes.fill[index]
+                })
+                return acc;
+            },[]);
+
+            drawLegend(svg,legendData,14,chartWidth,"",40);
+        }
 
         let barData =
             Array.from(d3.group(data, (g) => g[yVar]))
                 .reduce((acc, entry) => {
+                    const totals = xVars.reduce((xAcc, xVar, index) => {
+                        xAcc.push(
+                            {xVar,
+                            total:  d3.sum(entry[1],(s) => s[xVar]),
+                            xVarIndex:index })
+                        return xAcc;
+                    },[])
                     acc.push({
                         yVar: entry[0],
-                        total: d3.sum(entry[1],(s) => s[xVar])
+                        totals,
+                        maxTotal: d3.max(totals, (m) => m.total)
                     })
                     return acc;
                 },[])
-                .sort((a,b) => d3[ySort](a.total,b.total))
+                .sort((a,b) => d3[ySort](a.maxTotal,b.maxTotal))
 
         if(topX && topX !== null){
             barData = barData.slice(0,topX);
         }
         if(greaterThan && greaterThan !== null){
-            barData = barData.filter((f) => f.total > greaterThan);
+            barData = barData.filter((f) => f.maxTotal > greaterThan);
         }
 
         const yBands = barData.map((m) => m.yVar);
@@ -375,7 +395,7 @@ const horizontalBarChart = ()  => {
         const maxLabelWidth = d3.max(yBands, (d) => measureWidth(d));
         margin.left = maxLabelWidth + 80;
 
-        const xExtent = d3.extent(barData, (d) => d.total);
+        const xExtent = d3.extent(barData, (d) => d.maxTotal);
 
         const xScale = d3.scaleLinear()
             .domain(xExtent)
@@ -386,13 +406,16 @@ const horizontalBarChart = ()  => {
             .domain(yBands)
             .range([0,chartHeight - margin.top - margin.bottom]);
 
-        const fontSize = Math.min(yScale.bandwidth() * 0.75, 14);
+        const fontSize = Math.min((yScale.bandwidth() * 0.75)/xVars.length, 14);
 
         let titleLabel = svg.select(".titleLabel");
         let xAxisLabel = svg.select(".xAxisLabel");
         let yAxisLabel = svg.select(".yAxisLabel");
         let xAxis = svg.select(".xAxis");
         let yAxis = svg.select(".yAxis");
+
+        let clipPath = svg.select(".barClipPath");
+        let clipRect = svg.select(".clipRect");
 
         if(xAxis.node() === null){
             // append if initial draw
@@ -401,6 +424,8 @@ const horizontalBarChart = ()  => {
             yAxisLabel = svg.append("text").attr("class","yAxisLabel");
             xAxis = svg.append("g").attr("class","xAxis");
             yAxis = svg.append("g").attr("class","yAxis");
+            clipPath = svg.append("clipPath").attr("class", "barClipPath");
+            clipRect = clipPath.append("rect").attr("class", "clipRect");
         }
 
         titleLabel
@@ -463,19 +488,25 @@ const horizontalBarChart = ()  => {
             .attr("fill", "grey")
             .attr("font-size", fontSize);
 
+
         const { cornerRadius, fill} = barAttributes;
 
-        const barHeight = yScale.bandwidth();
+        clipPath.attr("id", `clipRect${chartClass}`);
+
+        clipRect
+          .attr("x", cornerRadius + 0.5)
+            .attr("width", chartWidth - margin.left - margin.right)
+            .attr("height", chartHeight - margin.top - margin.bottom);
+
+
+        const barHeight = yScale.bandwidth()/xVars.length;
 
         const barGroup = svg
             .selectAll(".barGroup")
             .data(barData)
             .join((group) => {
                 const enter = group.append("g").attr("class", "barGroup");
-                enter.append("rect").attr("class", "barRect");
-                enter.append("text").attr("class", "barLabel");
-                enter.append("clipPath").attr("class", "barClipPath")
-                     .append("rect").attr("class", "clipRect");
+                enter.append("g").attr("class", "barsGroup");
                 return enter;
             });
 
@@ -487,7 +518,10 @@ const horizontalBarChart = ()  => {
                 currentGroup.select(".barRect").attr("fill-opacity",1);
                 let tooltipText = "";
                 tooltipText += `<strong>${yVar}:</strong> ${d.yVar}<br>`
-                tooltipText += `<strong>${xVar}:</strong> ${d3.format(format.x)(d.total)}<br>`
+                xVars.forEach((xVar) => {
+                    const xVarData = d.totals.find((f) => f.xVar === xVar);
+                    tooltipText += `<strong>${xVar}:</strong> ${d3.format(format.x)(xVarData.total)}<br>`
+                })
                 d3.select(".chartTooltip")
                     .style("visibility","visible")
                     .style("left",`${event.x + 10}px`)
@@ -500,40 +534,43 @@ const horizontalBarChart = ()  => {
                     .style("visibility","hidden");
             });
 
-        barGroup
-            .select(".barClipPath")
-            .attr("id", (d, i) => `clipRect${chartClass}${i}`);
 
-        barGroup
-            .select(".clipRect")
-            .attr("x", 0)
-            .attr("y", (d) => yScale(d.yVar))
-            .attr("width", (d) => xScale(d.total))
-            .attr("height", barHeight);
+        barGroup.select(".barsGroup")
+            .attr("clip-path", (d, i) => `url(#clipRect${chartClass})`)
+            .attr("transform",(d) => `translate(${-cornerRadius},${yScale(d.yVar)})`)
 
-        barGroup
+        const barsGroup = barGroup.select(".barsGroup")
+            .selectAll(".allBarsGroup")
+            .data((d) => d.totals)
+            .join((group) => {
+                const enter = group.append("g").attr("class", "allBarsGroup");
+                enter.append("rect").attr("class", "barRect");
+                enter.append("text").attr("class", "barLabel");
+                return enter;
+            });
+
+        barsGroup.attr("transform",(d) => `translate(0, ${(barHeight - xVars.length) * d.xVarIndex})`)
+
+        barsGroup
             .select(".barRect")
-            .attr("clip-path", (d, i) => `url(#clipRect${chartClass}${i})`)
             .attr("rx", cornerRadius)
             .attr("ry", cornerRadius)
-            .attr("x", -cornerRadius)
-            .attr("y", (d) => yScale(d.yVar))
             .attr("width", (d) => xScale(d.total) + cornerRadius)
-            .attr("height", barHeight - 2)
-            .attr("fill",  fill);
+            .attr("height", barHeight - (xVars.length + 1))
+            .attr("fill",  (d) => fill[d.xVarIndex]);
 
-        barGroup
+        barsGroup
             .select(".barLabel")
-            .attr("pointer-events", "none")
+            .attr("pointer-events", (d) => measureWidth(d3.format(format.x)(d.total),fontSize) + 10 < xScale(d.total) ? "none" : "all")
             .attr("x", (d) => xScale(d.total))
             .attr("dx", (d) => measureWidth(d3.format(format.x)(d.total),fontSize) + 10 < xScale(d.total) ? -3 : 3)
-            .attr("y", (d) => yScale(d.yVar)  + barHeight/2)
+            .attr("y",  barHeight/2)
             .attr("text-anchor", (d) => measureWidth(d3.format(format.x)(d.total),fontSize) + 10 < xScale(d.total) ? "end" : "start")
             .style("dominant-baseline","middle")
             .attr("font-weight", 300)
             .attr("fill", (d) => measureWidth(d3.format(format.x)(d.total),fontSize) + 10 < xScale(d.total) ? "white" : "grey")
             .attr("font-size", fontSize)
-            .text((d) => d3.format(format.x)(d.total));
+            .text((d) =>  d.total === 0 ? "" :d3.format(format.x)(d.total));
 
 
         return chart;
@@ -600,7 +637,7 @@ const pieChart = ()  => {
             return acc;
         },[])
 
-        drawLegend(svg,pieData,fontSize, chartWidth,format);
+        drawLegend(svg,pieData,fontSize, chartWidth,format,30);
 
         const donutWidth = circleRadius * donutWidthRatio;
 
