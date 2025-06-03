@@ -3,6 +3,13 @@ body, svg {
 
 }
 
+
+.noselect {
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;     /* IE 10+ */
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
