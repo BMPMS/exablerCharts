@@ -14,34 +14,6 @@ const scatterChart = ()  => {
         const margin = { left: 100, right: 30, top: 70, bottom: 60 };
         const { data, dotAttributes, fontSize, format, labels, scales, tooltipVars, xVar, yVar } = props;
 
-        const isInRange = (selection,d) => xScale(d[xVar]) >= selection[0][0] && xScale(d[xVar]) <= selection[1][0]
-        && yScale(d[yVar]) >= selection[0][1] && yScale(d[yVar]) <= selection[1][1]
-        const brushed = (event) => {
-           if(!event.sourceEvent) return;
-           const {selection} = event;
-           svg.selectAll(".dotCircle")
-               .attr("fill", (d) => isInRange(selection,d) ? highlightFill : defaultFill);
-
-           const filteredData = data.reduce((acc, entry) => {
-               if(isInRange(selection, entry)){
-                   acc.push({entry})
-               }
-               return acc;
-           },[]);
-           brushResultsCallback(filteredData);
-
-        }
-        const brushExtent = [
-            [0,0],
-            [chartWidth - margin.left - margin.right, chartHeight - margin.top - margin.bottom]
-        ];
-
-        // brush
-        const brush = d3.brush()
-            .extent(brushExtent)
-            .on("brush", brushed);
-
-
         const xExtent = d3.extent(data, (d) => +d[xVar]);
 
         const xScale = d3[scales.x]()
@@ -134,28 +106,9 @@ const scatterChart = ()  => {
             .attr("font-size", fontSize)
             .text((d) => (d === 0 ? "" : d3.format(format.y)(d)));
 
-        // call brush and set to full
-        brushGroup
-            .attr(
-                "transform",
-                `translate(${margin.left},${margin.top})`
-            )
-            .call(brush)
-            .call(brush.move, [[0,0],[0,0]]);
-
-        // style overlay and selection
-        brushGroup
-            .select(".overlay")
-            .style("fill", "transparent");
-
-        brushGroup
-            .select(".selection")
-            .style("stroke-width",0)
-            .style("fill","#A0A0A0");
-
-
-
         const { defaultFill, highlightFill, opacity, radius, strokeWidth } = dotAttributes;
+
+        let currentBrushSelection = [[0,0],[0,0]];
 
         const dotsGroup = dotGroup
             .selectAll(".dotsGroup")
@@ -181,7 +134,9 @@ const scatterChart = ()  => {
                 .html(tooltipText)
         })
             .on("mouseout",() => {
-                svg.selectAll(".dotCircle").attr("fill", defaultFill);
+                svg.selectAll(".dotCircle").attr("fill", (d) =>
+                    isInRange(currentBrushSelection,d) ? highlightFill: defaultFill
+                );
                 d3.select(".chartTooltip")
                     .style("visibility","hidden");
             })
@@ -196,11 +151,102 @@ const scatterChart = ()  => {
             .attr("stroke-width", strokeWidth)
             .attr("fill", defaultFill);
 
+        const isInRange = (selection,d) => xScale(d[xVar]) >= selection[0][0] && xScale(d[xVar]) <= selection[1][0]
+            && yScale(d[yVar]) >= selection[0][1] && yScale(d[yVar]) <= selection[1][1]
+        const brushed = (event) => {
+            if(!event.sourceEvent) return;
+            const {selection} = event;
+            currentBrushSelection = selection;
+            svg.selectAll(".dotCircle")
+                .attr("fill", (d) => isInRange(selection,d) ? highlightFill : defaultFill);
+
+            const filteredData = data.reduce((acc, entry) => {
+                if(isInRange(selection, entry)){
+                    acc.push({entry})
+                }
+                return acc;
+            },[]);
+            brushResultsCallback(filteredData);
+
+        }
+        const brushExtent = [
+            [0,0],
+            [chartWidth - margin.left - margin.right, chartHeight - margin.top - margin.bottom]
+        ];
+
+        // brush
+        const brush = d3.brush()
+            .extent(brushExtent)
+            .on("brush", brushed);
+
+        // call brush and set to full
+        brushGroup
+            .attr(
+                "transform",
+                `translate(${margin.left},${margin.top})`
+            )
+            .call(brush)
+            .call(brush.move, currentBrushSelection);
+
+        // style overlay and selection
+        brushGroup
+            .select(".overlay")
+            .style("fill", "transparent");
+
+        brushGroup
+            .select(".selection")
+            .style("stroke-width",0)
+            .style("fill","#A0A0A0");
+
     }
 
     chart.brushResultsCallback =  (value) => {
         if (!value) return brushResultsCallback;
         brushResultsCallback = value;
+        return chart;
+    };
+
+
+    chart.title =  (value) => {
+        if (!value) return title;
+        title = value;
+        return chart;
+    };
+
+    chart.chartWidth =  (value) => {
+        if (!value) return chartWidth;
+        chartWidth = value;
+        return chart;
+    };
+
+    chart.chartHeight =  (value) => {
+        if (!value) return chartHeight;
+        chartHeight = value;
+        return chart;
+    };
+
+    chart.props =  (value) => {
+        if (!value) return props;
+        props = value;
+        return chart;
+    };
+
+    return chart;
+}
+
+
+const horizontalBarChart = ()  => {
+
+    let props = {};
+    let title = "";
+    let chartWidth = 0;
+    let chartHeight = 0;
+    let svg = undefined;
+
+    const chart = (svg) => {
+
+        const margin = { left: 100, right: 30, top: 70, bottom: 60 };
+
         return chart;
     };
 
