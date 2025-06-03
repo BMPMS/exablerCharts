@@ -50,7 +50,7 @@ const scatterChart = ()  => {
         yAxisLabel
             .attr(
                 "transform",
-                `translate(15,${
+                `translate(25,${
                     margin.top + (chartHeight - margin.top - margin.bottom) / 2
                 }) rotate(-90)`
             )
