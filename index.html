@@ -7,6 +7,7 @@
 <script src="js/d3Charts.js"></script>
 <title>Chart Components</title>
 <body>
+<div class="chartTooltip"></div>
 <div class="grid-container">
     <div class="grid-item" id="chart1Div"></div>
     <div class="grid-item" id="chart2Div"></div>
@@ -21,6 +22,10 @@
         const data = await d3.csv("data/sampleData.csv");
         return data;
 
+    }
+
+    const brushResultsCallback = (brushedData) => {
+        console.log(brushedData);
     }
 
     const drawChart = (type,divId,props, title) => {
@@ -41,6 +46,7 @@
                 .chartWidth(clientWidth)
                 .chartHeight(clientHeight)
                 .title(title)
+                .brushResultsCallback(brushResultsCallback)
                 .props(props);
 
             newScatterChart(svg);
@@ -54,16 +60,16 @@
         dotAttributes: {
             radius: 8,
             opacity: 0.4,
-            defaultFill: "#3182bd",
-            strokeWidth: 0.5
+            defaultFill: "#808080",
+            highlightFill: "#de2d26",
         },
         format: {x:",",y:","},
         scales: {x: "scaleLinear", y: "scaleLinear"},
         fontSize: 14,
         labels: { xAxis: "Net Weight (kg)", yAxis: "Item Charge Amount (&#163;)" },
+        tooltipVars: ["Net Weight Measure","Item Charge Amount"],
         xVar: "Net Weight Measure",
-        yVar: "Item Charge Amount",
-        colorVar: "Non Preferential Country Code"
+        yVar: "Item Charge Amount"
     }
     drawChart("scatter","chart1Div",scatter1Props, "Scatter Linear Scale");
 
@@ -72,16 +78,17 @@
         dotAttributes: {
             radius: 8,
             opacity: 0.4,
-            defaultFill: "#3182bd",
+            defaultFill: "#808080",
+            highlightFill: "#de2d26",
             strokeWidth: 0.5
         },
         format: {x:",",y:","},
         scales: {x: "scaleLog", y: "scaleLog"},
         fontSize: 14,
         labels: { xAxis: "Net Weight (kg)", yAxis: "Item Charge Amount (&#163;)" },
+        tooltipVars: ["Net Weight Measure","Item Charge Amount"],
         xVar: "Net Weight Measure",
-        yVar: "Item Charge Amount",
-        colorVar: "Non Preferential Country Code"
+        yVar: "Item Charge Amount"
     }
     drawChart("scatter","chart2Div",scatter2Props, "Scatter Log Scale");
 

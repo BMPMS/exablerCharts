@@ -6,12 +6,41 @@ const scatterChart = ()  => {
     let title = "";
     let chartWidth = 0;
     let chartHeight = 0;
+    let brushResultsCallback = "";
     let svg = undefined;
 
     const chart = (svg) => {
 
         const margin = { left: 100, right: 30, top: 70, bottom: 60 };
-        const { data, dotAttributes, fontSize, format, labels, scales, xVar, yVar } = props;
+        const { data, dotAttributes, fontSize, format, labels, scales, tooltipVars, xVar, yVar } = props;
+
+        const isInRange = (selection,d) => xScale(d[xVar]) >= selection[0][0] && xScale(d[xVar]) <= selection[1][0]
+        && yScale(d[yVar]) >= selection[0][1] && yScale(d[yVar]) <= selection[1][1]
+        const brushed = (event) => {
+           if(!event.sourceEvent) return;
+           const {selection} = event;
+           svg.selectAll(".dotCircle")
+               .attr("fill", (d) => isInRange(selection,d) ? highlightFill : defaultFill);
+
+           const filteredData = data.reduce((acc, entry) => {
+               if(isInRange(selection, entry)){
+                   acc.push({entry})
+               }
+               return acc;
+           },[]);
+           brushResultsCallback(filteredData);
+
+        }
+        const brushExtent = [
+            [0,0],
+            [chartWidth - margin.left - margin.right, chartHeight - margin.top - margin.bottom]
+        ];
+
+        // brush
+        const brush = d3.brush()
+            .extent(brushExtent)
+            .on("brush", brushed);
+
 
         const xExtent = d3.extent(data, (d) => +d[xVar]);
 
@@ -30,6 +59,8 @@ const scatterChart = ()  => {
         let yAxisLabel = svg.select(".yAxisLabel");
         let xAxis = svg.select(".xAxis");
         let yAxis = svg.select(".yAxis");
+        let brushGroup = svg.select(".brushGroup");
+        let dotGroup = svg.select(".dotGroup");
 
         if(xAxis.node() === null){
             // append if initial draw
@@ -38,6 +69,8 @@ const scatterChart = ()  => {
             yAxisLabel = svg.append("text").attr("class","yAxisLabel");
             xAxis = svg.append("g").attr("class","xAxis");
             yAxis = svg.append("g").attr("class","yAxis");
+            brushGroup = svg.append("g").attr("class","brushGroup");
+            dotGroup = svg.append("g").attr("class","dotGroup");
         }
 
         titleLabel
@@ -101,20 +134,59 @@ const scatterChart = ()  => {
             .attr("font-size", fontSize)
             .text((d) => (d === 0 ? "" : d3.format(format.y)(d)));
 
-        const { defaultFill, opacity, radius, strokeWidth } = dotAttributes;
+        // call brush and set to full
+        brushGroup
+            .attr(
+                "transform",
+                `translate(${margin.left},${margin.top})`
+            )
+            .call(brush)
+            .call(brush.move, [[0,0],[0,0]]);
 
-        const dotGroup = svg
-            .selectAll(".dotGroup")
+        // style overlay and selection
+        brushGroup
+            .select(".overlay")
+            .style("fill", "transparent");
+
+        brushGroup
+            .select(".selection")
+            .style("stroke-width",0)
+            .style("fill","#A0A0A0");
+
+
+
+        const { defaultFill, highlightFill, opacity, radius, strokeWidth } = dotAttributes;
+
+        const dotsGroup = dotGroup
+            .selectAll(".dotsGroup")
             .data(data)
             .join((group) => {
-                const enter = group.append("g").attr("class", "dotGroup");
+                const enter = group.append("g").attr("class", "dotsGroup");
                 enter.append("circle").attr("class", "dotCircle");
                 return enter;
             });
 
-        dotGroup.attr("transform", `translate(${margin.left},${margin.top})`);
+        dotsGroup.attr("transform", `translate(${margin.left},${margin.top})`);
 
-        dotGroup
+        dotsGroup.on("mouseover", (event,d) => {
+            const currentGroup = d3.select(event.currentTarget);
+            currentGroup.raise();
+            currentGroup.select(".dotCircle").attr("fill",highlightFill);
+            let tooltipText = "";
+            tooltipVars.forEach((t) =>  tooltipText += d[t] ? `<strong>${t}:</strong> ${d[t]}<br>` : "")
+            d3.select(".chartTooltip")
+                .style("visibility","visible")
+                .style("left",`${event.x + 10}px`)
+                .style("top",`${event.y}px`)
+                .html(tooltipText)
+        })
+            .on("mouseout",() => {
+                svg.selectAll(".dotCircle").attr("fill", defaultFill);
+                d3.select(".chartTooltip")
+                    .style("visibility","hidden");
+            })
+
+        dotsGroup
             .select(".dotCircle")
             .attr("r", radius)
             .attr("cx", (d) => xScale(+d[xVar]))
@@ -124,10 +196,14 @@ const scatterChart = ()  => {
             .attr("stroke-width", strokeWidth)
             .attr("fill", defaultFill);
 
-
-
-
     }
+
+    chart.brushResultsCallback =  (value) => {
+        if (!value) return brushResultsCallback;
+        brushResultsCallback = value;
+        return chart;
+    };
+
 
     chart.title =  (value) => {
         if (!value) return title;
