@@ -23,7 +23,7 @@
 
     }
 
-    const drawChart = (type,divId,props) => {
+    const drawChart = (type,divId,props, title) => {
         const div = d3.select(`#${divId}`);
         const {clientWidth, clientHeight} = div.node();
 
@@ -40,6 +40,7 @@
             const newScatterChart = scatterChart()
                 .chartWidth(clientWidth)
                 .chartHeight(clientHeight)
+                .title(title)
                 .props(props);
 
             newScatterChart(svg);
@@ -56,13 +57,33 @@
             defaultFill: "#3182bd",
             strokeWidth: 0.5
         },
+        format: {x:",",y:","},
+        scales: {x: "scaleLinear", y: "scaleLinear"},
         fontSize: 14,
         labels: { xAxis: "Net Weight (kg)", yAxis: "Item Charge Amount (&#163;)" },
         xVar: "Net Weight Measure",
         yVar: "Item Charge Amount",
         colorVar: "Non Preferential Country Code"
     }
-    drawChart("scatter","chart1Div",scatter1Props);
+    drawChart("scatter","chart1Div",scatter1Props, "Scatter Linear Scale");
+
+    const scatter2Props =  {
+        data: sampleData,
+        dotAttributes: {
+            radius: 8,
+            opacity: 0.4,
+            defaultFill: "#3182bd",
+            strokeWidth: 0.5
+        },
+        format: {x:",",y:","},
+        scales: {x: "scaleLog", y: "scaleLog"},
+        fontSize: 14,
+        labels: { xAxis: "Net Weight (kg)", yAxis: "Item Charge Amount (&#163;)" },
+        xVar: "Net Weight Measure",
+        yVar: "Item Charge Amount",
+        colorVar: "Non Preferential Country Code"
+    }
+    drawChart("scatter","chart2Div",scatter2Props, "Scatter Log Scale");
 
 
 
