@@ -585,7 +585,7 @@ const timeSeriesChart = ()  => {
 
         brushGroup
             .select(".selection")
-            .style("fill-opacity", 0.075)
+            .style("fill-opacity", 0.2)
             .style("fill", colors.brush);
 
         updateCharts();
