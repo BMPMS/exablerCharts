@@ -967,7 +967,7 @@ const sankeyChart = ()  => {
             })
             .on("mouseout", () => {
                 d3.select(".chartTooltip")
-                    .style("visibility","visible");
+                    .style("visibility","hidden");
             });
 
         nodeGroup
@@ -1018,8 +1018,8 @@ const sankeyChart = ()  => {
             })
             .on("mouseout", () => {
                 d3.select(".chartTooltip")
-                    .style("visibility","visible");
-            });;
+                    .style("visibility","hidden");
+            });
 
 
         return chart;
