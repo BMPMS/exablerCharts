@@ -101,6 +101,15 @@
 
             newSankeyChart(svg);
         }
+        if(type === "treemap"){
+            const newTreemapChart = treemapChart()
+                .chartWidth(clientWidth)
+                .chartHeight(clientHeight)
+                .title(title)
+                .props(props);
+
+            newTreemapChart(svg);
+        }
     }
 
     const {data:sampleData, sankeyData} = await getChartData();
@@ -271,6 +280,17 @@
     }
 
     drawChart("sankey","chart11Div",sankeyProps,"Sankey Chart");
+
+    const treemapProps = {
+        data: sampleData,
+        fontSize: 14,
+        topX: 5,
+        parentVar: "Commodity Code",
+        childVar: "Non Preferential Country Code",
+        colors:  ["#1f77b4", "#ff7f0e", "#2ca02c",  "#9467bd", "#8c564b"]
+    }
+
+    drawChart("treemap","chart12Div",treemapProps,"Treemap Chart");
 
 
 </script>

@@ -1116,7 +1116,9 @@ const treemapChart = ()  => {
 
     const chart = (svg) => {
 
-        const margin = { left: 120, right: 120, top: 50, bottom: 20 };
+        const margin = { left: 30, right: 30, top: 70, bottom: 20 };
+
+        const {data,fontSize, colors, parentVar, childVar, topX} = props;
 
         let titleLabel = svg.select(".titleLabel");
 
@@ -1132,6 +1134,75 @@ const treemapChart = ()  => {
             .attr("font-size", fontSize * 1.2)
             .attr("fill", "#484848")
             .html(title);
+
+        const treeChildren = Array.from(d3.group(data, (g) => g[parentVar]))
+            .filter((f,i) => i < topX)
+            .reduce((acc, entry) => {
+                const children = Array.from(d3.group(entry[1], (g) => g[childVar]))
+                    .map((m) => m = {name:m[0], value: m[1].length})
+                acc.push({
+                    name: entry[0],
+                    children
+                })
+                return acc;
+            },[]);
+
+        const colorScaleDomain = treeChildren.map((m) => m.name);
+        const colorScale = d3.scaleOrdinal().domain(colorScaleDomain).range(colors);
+
+        const legendData = colorScaleDomain.reduce((acc, entry) => {
+            acc.push({
+                group: entry,
+                fill: colorScale(entry)
+            })
+            return acc;
+        },[]);
+
+        drawLegend(svg,legendData,12,chartWidth,"",45);
+
+        const treeHierarchy = d3.hierarchy({name: "root", children: treeChildren});
+
+        const treemap = d3.treemap()
+            .size([chartWidth - margin.left - margin.right, chartHeight - margin.top - margin.bottom])
+            .paddingTop(14)
+            .paddingInner(4)
+            .paddingLeft(4)
+            .paddingRight(4)
+            .paddingBottom(4);
+
+        treeHierarchy.count();
+
+        const root = treemap(treeHierarchy);
+
+        const treeData = root.descendants()
+            .filter((f) => f.depth > 0)
+         //   .sort((a,b) => d3.descending(a.depth, b.depth));
+
+        const nodesGroup = svg
+            .selectAll(".nodeGroup")
+            .data(treeData)
+            .join((group) => {
+                const enter = group.append("g").attr("class", "nodeGroup");
+                enter.append("rect").attr("class", "treeRect");
+                enter.append("text").attr("class", "treeRectLabel");
+                return enter;
+            });
+
+        nodesGroup.attr("transform", d => `translate(${margin.left + d.x0},${margin.top + d.y0})`);
+
+        nodesGroup.select(".treeRectLabel")
+            .attr("x",4)
+            .attr("y",12)
+            .attr("fill",(d) => d.depth === 1 ? "#808080" : "white")
+            .attr("font-size",12)
+            .text((d) => (d.x1 - d.x0) > measureWidth(d.data.name, 12) && d.y1 - d.y0 > 12 ? d.data.name : "")
+
+        nodesGroup.select(".treeRect")
+            .attr("width",(d) => d.x1 - d.x0)
+            .attr("height", (d) => d.y1 - d.y0)
+            .attr("stroke-width",(d) => d.depth === 2 ? 0 : 1)
+            .attr("stroke",(d) => d.depth === 1 ? colorScale(d.data.name) : "white")
+            .attr("fill",(d) => d.depth === 2 ? colorScale(d.parent.data.name) : "white")
 
 
 
