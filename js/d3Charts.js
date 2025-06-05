@@ -293,7 +293,7 @@ const scatterChart = ()  => {
 }
 
 
-const verticalBarChart = ()  => {
+const timeSeriesChart = ()  => {
 
     let props = {};
     let title = "";
@@ -303,9 +303,292 @@ const verticalBarChart = ()  => {
 
     const chart = (baseSvg) => {
 
-        const margin = { left: 100, right: 30, top: 70, bottom: 60 };
-        const brushBarCurve = 2;
+        const margin = { left: 100, right: 30, top: 70, bottom: 60, brush: 30, middle: 40 };
+        const {attributes, chartType,colors,data, fontSize, format, labels,timeVar, timeBand} = props;
+        const {brushBarCurve, barGap} = attributes;
+        // x and y scales
+        const xBandGroups = Array.from(d3.group(data, (d) => d3[timeBand](new Date(d[timeVar]))))
+            .sort((a,b) => d3.ascending(a[0],b[0]));
 
+        const xBands = xBandGroups.map((m) => m[0]);
+
+        const xScale = d3
+            .scaleBand()
+            .domain(xBands)
+            .range([0, chartWidth - margin.left - margin.right]);
+
+        const xScaleBrush = d3.scaleBand()
+            .domain(xBands)
+            .range([0, chartWidth - margin.left - margin.right]);
+
+        let xBandwidth = xScale.bandwidth();
+
+        const yMax = d3.max(xBandGroups, (d) => d[1].length);
+
+        const yScale = d3.scaleLinear()
+            .domain([0, yMax])
+            .range([chartHeight - margin.top-margin.middle-margin.bottom-margin.brush, 0]);
+
+        const yScaleBrush = d3.scaleLinear()
+            .domain([0, yMax])
+            .range([margin.brush - brushBarCurve, 0]);
+
+        let svg = baseSvg.select(".chartSvg");
+        let brushGroup = baseSvg.select(".brushGroup");
+        let titleLabel = svg.select(".titleLabel");
+        let xAxis = svg.select(".yAxis");
+        let yAxis = svg.select(".yAxis");
+        let xAxisLabel = svg.select(".xAxisTitle");
+        let yAxisLabel = svg.select(".yAxisTitle");
+        let brushClipPathRect = svg.select(".brushClipPathRect");
+        let mainClipPathRect = svg.select(".mainClipPathRect");
+        let mainChartGroup = svg.select(".mainChartGroup");
+        let brushChartGroup = svg.select(".brushChartGroup");
+        let mainChartLine = svg.select(".mainChartLine");
+        let brushChartLine = svg.select(".brushChartLine");
+
+        if(svg.node() === null){
+            // append if initial draw
+            svg = baseSvg.append("g").attr("class","chartSvg");
+            brushGroup = baseSvg.append("g").attr("class","brushGroup");
+            xAxis = svg.append("g").attr("class","yAxis");
+            yAxis = svg.append("g").attr("class","yAxis");
+            titleLabel = svg.append("text").attr("class","titleLabel");
+            xAxisLabel = svg.append("text").attr("class","xAxisLabel");
+            yAxisLabel = svg.append("text").attr("class","yAxisLabel");
+            brushClipPathRect = svg.append("clipPath").attr("id", "brushClipPath")
+               .append("rect").attr("class","brushClipPathRect");
+            mainClipPathRect = svg.append("clipPath").attr("id", "mainClipPath")
+               .append("rect").attr("class","mainClipPathRect");
+            mainChartGroup = svg.append("g").attr("class", "mainChartGroup");
+            mainChartLine = mainChartGroup.append("path").attr("class","mainChartLine");
+            brushChartGroup = svg.append("g").attr("class", "brushChartGroup");
+            brushChartLine = brushChartGroup.append("path").attr("class","brushChartLine");
+        }
+
+        titleLabel
+            .attr("x", chartWidth / 2)
+            .attr("y", fontSize * 2)
+            .attr("text-anchor", "middle")
+            .attr("font-size", fontSize * 1.2)
+            .attr("fill", "#484848")
+            .html(title);
+
+        xAxisLabel
+            .attr("x", margin.left + (chartWidth - margin.left - margin.right) / 2)
+            .attr("y", chartHeight - fontSize)
+            .attr("text-anchor", "middle")
+            .attr("font-size", fontSize)
+            .attr("fill", "grey")
+            .html(labels.xAxis);
+
+        yAxisLabel
+            .attr(
+                "transform",
+                `translate(30,${
+                    margin.top + (chartHeight - margin.top - margin.bottom - margin.brush - margin.middle) / 2
+                }) rotate(-90)`
+            )
+            .attr("text-anchor", "middle")
+            .attr("font-size", fontSize)
+            .attr("fill", "grey")
+            .html(labels.yAxis);
+
+        yAxis
+            .call(d3.axisLeft(yScale).ticks(5).tickSizeOuter(0))
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        yAxis.selectAll("path").style("stroke", "#A0A0A0");
+
+        yAxis.selectAll("line").attr("display", "none");
+
+        yAxis
+            .selectAll("text")
+            .attr("pointer-events", "none")
+            .attr("font-weight", 300)
+            .attr("x", -5)
+            .attr("fill", "grey")
+            .attr("font-size", fontSize);
+
+        brushClipPathRect
+            .attr("width", chartWidth - margin.left - margin.right)
+            .attr("height", margin.brush)
+            .attr(
+                "transform",
+                `translate(${margin.left},${
+                    chartHeight - margin.brush - margin.bottom - brushBarCurve
+                })`
+            );
+
+        mainClipPathRect
+            .attr("width", chartWidth - margin.left - margin.right)
+            .attr("height", chartHeight - margin.bottom - margin.brush - margin.middle )
+            .attr(
+                "transform",
+                `translate(${margin.left},0)`
+            );;
+
+        mainChartGroup.attr("clip-path", "url(#mainClipPath)");
+        brushChartGroup.attr("clip-path", "url(#brushClipPath)");
+
+        const line = d3.line()
+            .x((d) => xScale(d[0]))
+            .y((d) => yScale((d[1].length)));
+
+        const brushLine = d3.line()
+            .x((d) => xScale(d[0]))
+            .y((d) => yScaleBrush((d[1].length)));
+
+        brushChartLine
+            .datum(chartType === "line/dot" ? xBandGroups : [])
+            .attr("d", brushLine)
+            .attr("fill", "none")
+            .attr("stroke-width", 1)
+            .attr("stroke", colors.line)
+            .attr("transform", `translate(${margin.left + xBandwidth/2},${chartHeight - margin.bottom - margin.brush + brushBarCurve})`);
+
+
+        const brushTickGroup = brushChartGroup
+            .selectAll(".brushTickGroup")
+            .data(xBandGroups)
+            .join((group) => {
+                const enter = group.append("g").attr("class", "brushTickGroup");
+                enter.append("circle").attr("class", "tickDot");
+                enter.append("rect").attr("class", "brushTickBar");
+                return enter;
+            });
+
+        brushTickGroup.attr(
+            "transform",
+            `translate(${margin.left},${
+                chartHeight - margin.brush - margin.bottom  + brushBarCurve
+            })`
+        );
+
+        brushTickGroup.select(".tickDot")
+            .attr("display", chartType === "line/dot" ? "block" : "none")
+            .attr("cx",(d) => xScale(d[0]) + xBandwidth/2)
+            .attr("cy",(d) => yScaleBrush(d[1].length))
+            .attr("fill",colors.dot)
+            .attr("r",brushBarCurve);
+
+        brushTickGroup.select(".brushTickBar")
+            .attr("display", chartType === "bar" ? "block" : "none")
+            .attr("rx",brushBarCurve)
+            .attr("ry",brushBarCurve)
+            .attr("x", (d) => xScaleBrush(d[0]) + barGap)
+            .attr("y",(d) => yScaleBrush(d[1].length) - brushBarCurve)
+            .attr("width",xScaleBrush.bandwidth() - (barGap * 2))
+            .attr("height",(d) => yScale(0) - yScaleBrush(d[1].length) + (brushBarCurve * 2))
+            .attr("fill",colors.dot);
+
+
+
+        const updateCharts = () => {
+
+            xBandwidth = xScale.bandwidth();
+
+            const xScaleExtent = d3.extent(xScale.domain());
+
+            const chartData = xBandGroups.filter((f) => f[0] >= xScaleExtent[0] && f[0] <= xScaleExtent[1]);
+            xAxis
+                .call(d3.axisBottom(xScale).ticks(2).tickFormat((d) => d3.timeFormat(format.x)(d)).tickSizeOuter(0))
+                .attr("transform", `translate(${margin.left},${chartHeight - margin.bottom - margin.brush - margin.middle + 0.5})`);
+
+            xAxis.selectAll("path").style("stroke", "#A0A0A0");
+
+            xAxis.selectAll("line").attr("display", "none");
+
+            xAxis
+                .selectAll("text")
+                .attr("pointer-events", "none")
+                .attr("font-weight", 300)
+                .attr("fill", "grey")
+                .attr("y", 5)
+                .attr("font-size", fontSize);
+
+            mainChartLine
+                .datum(chartType === "line/dot" ? chartData : [])
+                .attr("d", line)
+                .attr("fill", "none")
+                .attr("stroke-width", 1)
+                .attr("stroke", colors.line)
+                .attr("transform", `translate(${margin.left + xBandwidth/2},${margin.top})`);
+
+            const mainTickGroup = mainChartGroup
+                .selectAll(".mainTickGroup")
+                .data(chartData)
+                .join((group) => {
+                    const enter = group.append("g").attr("class", "mainTickGroup");
+                    enter.append("circle").attr("class", "mainTickDot");
+                    enter.append("rect").attr("class", "mainTickBar");
+
+                    return enter;
+                });
+
+            mainTickGroup.attr("transform", `translate(${margin.left},${margin.top})`);
+
+            mainTickGroup.select(".mainTickDot")
+                .attr("display", chartType === "line/dot" ? "block" : "none")
+                .attr("cx",(d) => xScale(d[0]) + xBandwidth/2)
+                .attr("cy",(d) => yScale(d[1].length))
+                .attr("fill",colors.dot)
+                .attr("r",brushBarCurve);
+
+            mainTickGroup.select(".mainTickBar")
+                .attr("display", chartType === "bar" ? "block" : "none")
+                .attr("rx",brushBarCurve)
+                .attr("ry",brushBarCurve)
+                .attr("x",(d) => xScale(d[0]) + barGap)
+                .attr("y",(d) => yScale(d[1].length) - brushBarCurve)
+                .attr("width",xScale.bandwidth() - (barGap * 2))
+                .attr("height",(d) => yScale(0) - yScale(d[1].length) + (brushBarCurve * 2))
+                .attr("fill",colors.dot);
+        }
+
+        const brushed = (event) => {
+            if (!event.sourceEvent) return;
+            const { selection } = event;
+            let bandsInRange = xBands.filter(
+                (f) => xScaleBrush(f) >= selection[0] && xScaleBrush(f) <= selection[1]
+            );
+            if (bandsInRange.length < 2) {
+                bandsInRange = xScale.domain();
+            }
+            const bandsInRangeExtent = d3.extent(bandsInRange);
+            brushGroup.call(brush.move, [
+                xScaleBrush(bandsInRangeExtent[0]),
+                xScaleBrush(bandsInRangeExtent[1]) + xScaleBrush.bandwidth()
+            ]);
+
+            xScale.domain(bandsInRange);
+            updateCharts();
+
+        }
+
+        // defined brush
+        const brushExtent = [
+            [0, 0],
+            [chartWidth - margin.left - margin.right, margin.brush]
+        ];
+
+        const brush = d3.brushX()
+            .extent(brushExtent)
+            .on("brush", brushed);
+
+        brushGroup.attr(
+                "transform",
+                `translate(${margin.left},${chartHeight - margin.brush - margin.bottom})`
+            )
+            .call(brush)
+            .call(brush.move, [0, chartWidth - margin.left - margin.right]);
+
+        brushGroup
+            .select(".selection")
+            .style("fill-opacity", 0.075)
+            .style("fill", colors.brush);
+
+        updateCharts();
         return chart;
     };
 

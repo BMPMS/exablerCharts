@@ -17,6 +17,8 @@
     <div class="grid-item" id="chart6Div"></div>
     <div class="grid-item" id="chart7Div"></div>
     <div class="grid-item" id="chart8Div"></div>
+    <div class="grid-item" id="chart9Div"></div>
+    <div class="grid-item" id="chart10Div"></div>
 </div>
 
 <script type="module">
@@ -76,6 +78,15 @@
                 .props(props);
 
             newPieChart(svg);
+        }
+        if(type === "timeSeries"){
+            const newTimeSeriesChart = timeSeriesChart()
+                .chartWidth(clientWidth)
+                .chartHeight(clientHeight)
+                .title(title)
+                .props(props);
+
+            newTimeSeriesChart(svg);
         }
     }
 
@@ -188,8 +199,36 @@
         donutWidthRatio: 0.2
     }
 
-    drawChart("pie","chart6Div",pieProps,"Pie Chart")
+    drawChart("pie","chart6Div",pieProps,"Pie Chart");
 
+    const timeSeriesProps = {
+        data: sampleData,
+        fontSize: 14,
+        format:{x: "%H:%M",y:","},
+        timeVar: "SubmittedOn",
+        chartType:"line/dot",
+        labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
+        timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
+        colors: {line: "#3182bd",dot: "#3182bd", brush:"#808080"},
+        attributes: {dotRadius: 6, brushBarCurve: 2}
+    }
+
+    drawChart("timeSeries","chart8Div",timeSeriesProps,"Time Series Chart - dot/line - simple count")
+
+
+    const timeSeriesProps2 = {
+        data: sampleData,
+        fontSize: 14,
+        format:{x: "%H:%M",y:","},
+        timeVar: "SubmittedOn",
+        chartType:"bar",
+        labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
+        timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
+        colors: {line: "#3182bd",dot: "#3182bd", brush:"#808080"},
+        attributes: {barGap: 2, brushBarCurve: 2}
+    }
+
+    drawChart("timeSeries","chart9Div",timeSeriesProps2,"Time Series Chart - bar - simple count")
 
 </script>
 </body>
