@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    {"name": "Submitted", "category": "Start"},
+    {"name": "REJ-1", "category": "Rejection"},
+    {"name": "REJ-2", "category": "Rejection"},
+    {"name": "REJ-3", "category": "Rejection"},
+    {"name": "REJ-4", "category": "Rejection"},
+    {"name": "RCV", "category": "Processing"},
+    {"name": "CLE", "category": "Complete"}
+  ],
+  "links": [
+    {"source": "Submitted", "target": "RCV", "value": 400},
+    {"source": "Submitted", "target": "REJ-1", "value": 600},
+    {"source": "REJ-1", "target": "RCV", "value": 300},
+    {"source": "REJ-1", "target": "REJ-2", "value": 300},
+    {"source": "REJ-2", "target": "RCV", "value": 100},
+    {"source": "REJ-2", "target": "REJ-3", "value": 200},
+    {"source": "REJ-3", "target": "RCV", "value": 100},
+    {"source": "REJ-3", "target": "REJ-4", "value": 100},
+    {"source": "RCV", "target": "CLE", "value": 900}
+  ]
+}

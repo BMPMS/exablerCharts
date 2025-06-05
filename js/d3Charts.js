@@ -893,7 +893,165 @@ const horizontalBarChart = ()  => {
 }
 
 
+const sankeyChart = ()  => {
 
+    let props = {};
+    let title = "";
+    let chartWidth = 0;
+    let chartHeight = 0;
+
+    const chart = (svg) => {
+
+        const margin = { left: 120, right: 120, top: 50, bottom: 20 };
+        const { colorScale, data,fontSize} = props;
+        const { nodes, links } = data;
+        nodes.map((m,i) => m.index = i);
+        const nodeWidth = 20;
+
+        let titleLabel = svg.select(".titleLabel");
+
+        if(titleLabel.node() === null) {
+            // append if initial draw
+            titleLabel = svg.append("text").attr("class", "titleLabel");
+        };
+
+        titleLabel
+            .attr("x", chartWidth / 2)
+            .attr("y", fontSize * 2)
+            .attr("text-anchor", "middle")
+            .attr("font-size", fontSize * 1.2)
+            .attr("fill", "#484848")
+            .html(title);
+
+        const nodeScale = d3.scaleOrdinal().domain(colorScale.domain).range(colorScale.range);
+
+        const sankey = d3.sankey()
+            .nodeId((d) => d.name)
+            .nodeWidth(nodeWidth)
+            .nodePadding(10)
+            .extent([
+                [0, 0],
+                [chartWidth - margin.left - margin.right, chartHeight - margin.top - margin.bottom]
+            ]);
+
+        sankey({ nodes, links });
+
+        const linkPath = d3.sankeyLinkHorizontal();
+
+        const nodeGroup = svg
+            .selectAll(".nodeGroup")
+            .data(nodes)
+            .join((group) => {
+                const enter = group.append("g").attr("class", "nodeGroup");
+                enter.append("rect").attr("class", "nodeRect");
+                enter.append("text").attr("class", "nodeLabel");
+                return enter;
+            });
+
+        nodeGroup.attr("transform", `translate(${margin.left},${margin.top})`);
+
+        nodeGroup
+            .select(".nodeRect")
+            .attr("x", (d) => d.x0)
+            .attr("y", (d) => d.y0)
+            .attr("width", nodeWidth)
+            .attr("height", (d) => d.y1 - d.y0)
+            .attr("fill", (d) => nodeScale(d.category))
+            .on("mousemove", (event, d) => {
+                const tooltipText = `<strong>${d.name}</strong><br>${d.category}`;
+                d3.select(".chartTooltip")
+                    .style("visibility","visible")
+                    .style("left",`${event.x + 10}px`)
+                    .style("top",`${event.pageY}px`)
+                    .html(tooltipText)
+            })
+            .on("mouseout", () => {
+                d3.select(".chartTooltip")
+                    .style("visibility","visible");
+            });
+
+        nodeGroup
+            .select(".nodeLabel")
+            .attr("x", (d) => d.x0 + (d.depth === 0 ? -5 : 5 + nodeWidth))
+            .attr("y", (d) => d.y0 + (d.y1 - d.y0) / 2)
+            .attr("text-anchor", (d) => (d.depth === 0 ? "end" : "start"))
+            .attr("font-size", fontSize)
+            .attr("dy", 4)
+            .text((d) => d.name.replace(/_/g, " "));
+
+        const linkGroup = svg
+            .selectAll(".linkGroup")
+            .data(links)
+            .join((group) => {
+                const enter = group.append("g").attr("class", "linkGroup");
+                enter.append("path").attr("class", "linkPath");
+                enter.append("clipPath").attr("class", "sankeyLinkClipPath")
+                    .append("rect").attr("class","sankeyLinkClipPathRect");
+                return enter;
+            });
+
+        linkGroup.attr("transform", `translate(${margin.left},${margin.top})`);
+
+        linkGroup.select(".sankeyLinkClipPath")
+            .attr("id",(d) => `sankeyLinkClipPath${d.index}`);
+
+        linkGroup.select(".sankeyLinkClipPathRect")
+            .attr("transform",(d) => `translate(${d.source.x1},${d.source.y0})`)
+            .attr("width", (d) => d.target.x0 - d.source.x1)
+            .attr("height",(d) => d.target.y1 - d.source.y0);
+
+        linkGroup
+            .select(".linkPath")
+            .attr("clip-path",(d) => `url(#sankeyLinkClipPath${d.index})`)
+            .attr("stroke-opacity", 0.1)
+            .attr("stroke", (d) => "black")
+            .attr("stroke-width", (d) => d.width)
+            .attr("fill", "transparent")
+            .attr("d", (d) => linkPath(d))
+            .on("mousemove", (event, d) => {
+                const tooltipText = `<strong>${d.source.name} TO ${d.target.name}</strong><br>${d.value}`;
+                d3.select(".chartTooltip")
+                    .style("visibility","visible")
+                    .style("left",`${event.x + 10}px`)
+                    .style("top",`${event.pageY}px`)
+                    .html(tooltipText)
+            })
+            .on("mouseout", () => {
+                d3.select(".chartTooltip")
+                    .style("visibility","visible");
+            });;
+
+
+        return chart;
+    };
+
+    chart.title =  (value) => {
+        if (!value) return title;
+        title = value;
+        return chart;
+    };
+
+    chart.chartWidth =  (value) => {
+        if (!value) return chartWidth;
+        chartWidth = value;
+        return chart;
+    };
+
+    chart.chartHeight =  (value) => {
+        if (!value) return chartHeight;
+        chartHeight = value;
+        return chart;
+    };
+
+
+    chart.props =  (value) => {
+        if (!value) return props;
+        props = value;
+        return chart;
+    };
+
+    return chart;
+}
 const pieChart = ()  => {
 
     let props = {};

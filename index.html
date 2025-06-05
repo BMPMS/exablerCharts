@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="css/d3Charts.css"/>
 <link href='https://fonts.googleapis.com/css?family=Merriweather' rel='stylesheet'>
 <script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 <script src="js/d3Charts.js"></script>
 <title>Chart Components</title>
 <body>
@@ -26,7 +27,8 @@
 
     const getChartData = async () => {
         const data = await d3.csv("data/sampleData.csv");
-        return data;
+        const sankeyData = await d3.json("data/sankeyData.json");
+        return {data, sankeyData};
 
     }
 
@@ -88,9 +90,18 @@
 
             newTimeSeriesChart(svg);
         }
+        if(type === "sankey"){
+            const newSankeyChart = sankeyChart()
+                .chartWidth(clientWidth)
+                .chartHeight(clientHeight)
+                .title(title)
+                .props(props);
+
+            newSankeyChart(svg);
+        }
     }
 
-    const sampleData = await getChartData();
+    const {data:sampleData, sankeyData} = await getChartData();
 
     const scatter1Props =  {
         data: sampleData,
@@ -228,7 +239,19 @@
         attributes: {barGap: 2, brushBarCurve: 2}
     }
 
-    drawChart("timeSeries","chart9Div",timeSeriesProps2,"Time Series Chart - bar - simple count")
+    drawChart("timeSeries","chart9Div",timeSeriesProps2,"Time Series Chart - bar - simple count");
+
+
+    const sankeyProps = {
+        data: sankeyData,
+        fontSize: 14,
+        colorScale: {
+            domain: ["Submitted","Rejected","Processing-2","Complete"],
+            range: ["#006884","#ef3340","#006884","#02894b"]}
+    }
+
+    drawChart("sankey","chart10Div",sankeyProps,"Sankey Chart");
+
 
 </script>
 </body>
