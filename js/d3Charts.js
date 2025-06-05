@@ -306,6 +306,7 @@ const timeSeriesChart = ()  => {
         const margin = { left: 100, right: 30, top: 80, bottom: 60, brush: 30, middle: 40 };
         const {attributes, chartType,colors,data, fontSize, format, groupBy, labels,timeVar, timeBand} = props;
         const {brushBarCurve, barGap} = attributes;
+
         // x and y scales
         const xBandGroups = Array.from(d3.group(data, (d) => d3[timeBand](new Date(d[timeVar]))))
             .sort((a,b) => d3.ascending(a[0],b[0]));
@@ -562,8 +563,10 @@ const timeSeriesChart = ()  => {
 
             const groupByGap = 2;
 
-            mainTickGroup.select(".groupByGroup").attr("transform",(d) =>
-                `translate(${xScale(d[0]) + barGap + groupByGap},${brushBarCurve})`)
+            mainTickGroup.select(".groupByGroup")
+                .attr("transform",(d) =>  `translate(${xScale(d[0]) + barGap + groupByGap},${brushBarCurve})`)
+
+
 
             const groupByBarWidth = groupBy ? (barWidth
                 - ((groupBySet.length + 1) * groupByGap))/groupBySet.length: 0;
