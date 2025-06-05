@@ -1118,6 +1118,23 @@ const treemapChart = ()  => {
 
         const margin = { left: 120, right: 120, top: 50, bottom: 20 };
 
+        let titleLabel = svg.select(".titleLabel");
+
+        if(titleLabel.node() === null) {
+            // append if initial draw
+            titleLabel = svg.append("text").attr("class", "titleLabel");
+        };
+
+        titleLabel
+            .attr("x", chartWidth / 2)
+            .attr("y", fontSize * 2)
+            .attr("text-anchor", "middle")
+            .attr("font-size", fontSize * 1.2)
+            .attr("fill", "#484848")
+            .html(title);
+
+
+
         return chart;
     };
 
