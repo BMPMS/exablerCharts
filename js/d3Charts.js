@@ -5,6 +5,27 @@ const measureWidth = (text, fontSize) => {
     return context.measureText(text).width;
 }
 
+const drawTable = (data,divId) => {
+    if(data.length === 0) return;
+    console.log(data);
+    let tableStr = `<table><tr>`;
+    Object.keys(data[0]).forEach((key) => {
+        tableStr += `<th>${key}</th>`
+    })
+    tableStr += "</tr>";
+    data.forEach((row) => {
+        tableStr += "<tr>";
+        Object.keys(data[0]).forEach((key) => {
+            tableStr += `<td>${row[key]}</td>`
+        })
+        tableStr += "</tr>";
+    })
+    tableStr += "</table>"
+    d3.select(`#${divId}`)
+        .style("overflow","auto")
+        .html(tableStr);
+
+}
 const drawLegend = (svg, legendData, fontSize, width, format, translateY) => {
 
     let accumulativeX = 0;
@@ -63,7 +84,7 @@ const scatterChart = ()  => {
     const chart = (svg) => {
 
         const margin = { left: 100, right: 30, top: 70, bottom: 60 };
-        const { data, dotAttributes, fontSize, format, labels, scales, tooltipVars, xVar, yVar } = props;
+        const { data, dotAttributes, fontSize, format, labels, scales, tableDivId, tooltipVars, xVar, yVar } = props;
 
         const xExtent = d3.extent(data, (d) => +d[xVar]);
 
@@ -213,11 +234,11 @@ const scatterChart = ()  => {
 
             const filteredData = data.reduce((acc, entry) => {
                 if(isInRange(selection, entry)){
-                    acc.push({entry})
+                    acc.push(entry)
                 }
                 return acc;
             },[]);
-            brushResultsCallback(filteredData);
+            brushResultsCallback(filteredData, tableDivId);
 
         }
         const brushExtent = [
@@ -485,7 +506,7 @@ const timeSeriesChart = ()  => {
             .attr("cx",(d) => xScale(d[0]) + xBandwidth/2)
             .attr("cy",(d) => yScaleBrush(d[1].length))
             .attr("fill",colors.dot)
-            .attr("r",brushBarCurve);
+            .attr("r",brushBarCurve)
 
         brushTickGroup.select(".brushTickBar")
             .attr("display", chartType === "bar" ? "block" : "none")
@@ -495,9 +516,7 @@ const timeSeriesChart = ()  => {
             .attr("y",(d) => yScaleBrush(d[1].length) - brushBarCurve)
             .attr("width",xScaleBrush.bandwidth() - (barGap * 2))
             .attr("height",(d) => yScale(0) - yScaleBrush(d[1].length) + (brushBarCurve * 2))
-            .attr("fill",colors.line);
-
-
+            .attr("fill",colors.line)
 
         const updateCharts = () => {
 
@@ -549,7 +568,19 @@ const timeSeriesChart = ()  => {
                 .attr("cx",(d) => xScale(d[0]) + xBandwidth/2)
                 .attr("cy",(d) => yScale(d[1].length))
                 .attr("fill",colors.dot)
-                .attr("r",brushBarCurve);
+                .attr("r",brushBarCurve)
+                .on("mousemove", (event,d) => {
+                    const tooltipText = d[1].length;
+                    d3.select(".chartTooltip")
+                        .style("visibility","visible")
+                        .style("left",`${event.x + 10}px`)
+                        .style("top",`${event.pageY}px`)
+                        .html(tooltipText)
+                })
+                .on("mouseout",() => {
+                    d3.select(".chartTooltip")
+                        .style("visibility","hidden");
+                });;
 
             mainTickGroup.select(".mainTickBar")
                 .attr("display", chartType === "bar" ? "block" : "none")
@@ -559,7 +590,19 @@ const timeSeriesChart = ()  => {
                 .attr("y",(d) => yScale(d[1].length) - brushBarCurve)
                 .attr("width",barWidth)
                 .attr("height",(d) => yScale(0) - yScale(d[1].length) + (brushBarCurve * 2))
-                .attr("fill",colors.line);
+                .attr("fill",colors.line)
+                .on("mousemove", (event,d) => {
+                    const tooltipText = `${groupBy ? 'Total: ' : ""}${d[1].length}`;
+                    d3.select(".chartTooltip")
+                        .style("visibility","visible")
+                        .style("left",`${event.x + 10}px`)
+                        .style("top",`${event.pageY}px`)
+                        .html(tooltipText)
+                })
+                .on("mouseout",() => {
+                    d3.select(".chartTooltip")
+                        .style("visibility","hidden");
+                });
 
             const groupByGap = 2;
 
@@ -579,6 +622,7 @@ const timeSeriesChart = ()  => {
                     return Array.from(d3.group(d[1], (g) => g[groupBy])).reduce((acc, entry,index) => {
                         acc.push({
                             value: entry[0],
+                            length: entry[1].length,
                             xPos: index * (groupByBarWidth + groupByGap),
                             yPos: yScale(entry[1].length),
                             height: yScale(0) - yScale(entry[1].length),
@@ -601,7 +645,19 @@ const timeSeriesChart = ()  => {
                 .attr("y",(d) => d.yPos)
                 .attr("width",groupByBarWidth)
                 .attr("height",(d) => d.height)
-                .attr("fill",(d) => d.fill);
+                .attr("fill",(d) => d.fill)
+                .on("mousemove", (event,d) => {
+                    const tooltipText = `<span style="color:${d.fill};">${d.value}: ${d.length}</span>`;
+                    d3.select(".chartTooltip")
+                        .style("visibility","visible")
+                        .style("left",`${event.x + 10}px`)
+                        .style("top",`${event.pageY}px`)
+                        .html(tooltipText)
+                })
+                .on("mouseout",() => {
+                    d3.select(".chartTooltip")
+                        .style("visibility","hidden");
+                });
         }
 
         const brushed = (event) => {
@@ -961,7 +1017,7 @@ const sankeyChart = ()  => {
     const chart = (svg) => {
 
         const margin = { left: 120, right: 120, top: 50, bottom: 20 };
-        const { colorScale, data,fontSize} = props;
+        const { colors, data,fontSize} = props;
         const { nodes, links } = data;
         nodes.map((m,i) => m.index = i);
         const nodeWidth = 20;
@@ -981,7 +1037,7 @@ const sankeyChart = ()  => {
             .attr("fill", "#484848")
             .html(title);
 
-        const nodeScale = d3.scaleOrdinal().domain(colorScale.domain).range(colorScale.range);
+        const nodeScale = d3.scaleOrdinal().domain(Object.keys(colors)).range(Object.values(colors));
 
         const sankey = d3.sankey()
             .nodeId((d) => d.name)
@@ -1030,6 +1086,7 @@ const sankeyChart = ()  => {
 
         nodeGroup
             .select(".nodeLabel")
+            .attr("pointer-events","none")
             .attr("x", (d) => d.x0 + (d.depth === 0 ? -5 : 5 + nodeWidth))
             .attr("y", (d) => d.y0 + (d.y1 - d.y0) / 2)
             .attr("text-anchor", (d) => (d.depth === 0 ? "end" : "start"))
@@ -1191,9 +1248,31 @@ const treemapChart = ()  => {
                 return enter;
             });
 
-        nodesGroup.attr("transform", d => `translate(${margin.left + d.x0},${margin.top + d.y0})`);
+        nodesGroup.attr("transform", d => `translate(${margin.left + d.x0},${margin.top + d.y0})`)
+            .on("mousemove", (event, d) => {
+                let tooltipText = "";
+                if(d.depth === 2){
+                  tooltipText = `<strong>${parentVar}</strong>: ${d.parent.data.name}<br>`;
+                  tooltipText += `${d.data.name} - ${d.data.value}`
+                } else {
+                  tooltipText = `<strong>${parentVar}</strong>: ${d.data.name}<br>`;
+                  d.children.forEach((c) => {
+                      tooltipText += `${c.data.name} - ${c.data.value}<br>`;
+                  })
+                }
+                d3.select(".chartTooltip")
+                    .style("visibility","visible")
+                    .style("left",`${event.x + 10}px`)
+                    .style("top",`${event.pageY}px`)
+                    .html(tooltipText)
+            })
+            .on("mouseout", () => {
+                d3.select(".chartTooltip")
+                    .style("visibility","hidden");
+            });;
 
         nodesGroup.select(".treeRectLabel")
+            .attr("pointer-events","none")
             .attr("x",4)
             .attr("y",12)
             .attr("fill",(d) => d.depth === 1 ? "#808080" : "white")
@@ -1310,7 +1389,7 @@ const pieChart = ()  => {
                 svg.selectAll(".arcPath").attr("fill-opacity",1);
                 d3.select(".chartTooltip")
                     .style("visibility","hidden");
-            });;
+            });
 
 
         return chart;

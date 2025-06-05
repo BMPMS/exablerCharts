@@ -5,13 +5,16 @@
 <link href='https://fonts.googleapis.com/css?family=Merriweather' rel='stylesheet'>
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<script src="js/setupFunctions.js"></script>
 <script src="js/d3Charts.js"></script>
 <title>Chart Components</title>
 <body>
 <div class="chartTooltip"></div>
 <div class="grid-container">
     <div class="grid-item" id="chart1Div"></div>
+    <div class="grid-item" id="chart1TableDiv"></div>
     <div class="grid-item" id="chart2Div"></div>
+    <div class="grid-item" id="chart2TableDiv"></div>
     <div class="grid-item" id="chart3Div"></div>
     <div class="grid-item" id="chart4Div"></div>
     <div class="grid-item" id="chart5Div"></div>
@@ -26,101 +29,56 @@
 
 <script type="module">
 
+    // this is the only code you'll need to change
 
-    const getChartData = async () => {
-        const data = await d3.csv("data/sampleData.csv");
-        const sankeyData = await d3.json("data/sankeyData.json");
-        return {data, sankeyData};
+    // fetch data (pass in route to data, this could be a url
+    // as long as permissions are in place and the data is there in the expected format
+    // it should render the same
+    const {data:sampleData, sankeyData} = await getChartData("data/sampleData.csv","data/sankeyData.json")
 
+    const colors = {
+        defaultGrey: "#808080",
+        defaultColor:"#3182bd",
+        defaultLightGrey: "#D0D0D0",
+        highlight:"#de2d26",
+        groups: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"],
+        sankey: {"Submitted":"#006884","Rejected":"#ef3340","Processing-2":"#006884","Complete":"#02894b"}
     }
 
-    const brushResultsCallback = (brushedData) => {
-        console.log(brushedData);
-    }
+    /*
+         1. scatter chart - all props are compulsory
 
-    const drawChart = (type,divId,props, title) => {
-        const div = d3.select(`#${divId}`);
-        const {clientWidth, clientHeight} = div.node();
+        const scatterProps =  {
+          data: sampleData, // data in required format
+          tableDivId:"chart1TableDiv",
+            dotAttributes: {
+                radius: 8,
+                opacity: 0.4,
+                defaultFill: colors.defaultGrey,
+                highlightFill: colors.highlight,
+            },
+            format: {x:",",y:","}, // any valid option from https://d3js.org/d3-format
+            scales: {x: "scaleLinear", y: "scaleLinear"},  // scaleLinear or scaleLog only
+            fontSize: 14,
+            labels: { xAxis: "Net Weight (kg)", yAxis: "Item Charge Amount (&#163;)" },
+            tooltipVars: ["Net Weight Measure","Item Charge Amount"], // add more variables from the data for new lines
+            xVar: "Net Weight Measure", // must be in dataset
+            yVar: "Item Charge Amount" // must be in dataset
+        };
 
-        let svg = div.select("svg");
-        if (svg.node() === null) {
-            svg = div
-                .append("svg")
-                .style("background-color","white")
-                .attr("class","noselect")
-                .attr("width", clientWidth)
-                .attr("height",clientHeight);
-        }
-        if(type === "scatter"){
-            // load charts
-            const newScatterChart = scatterChart()
-                .chartWidth(clientWidth)
-                .chartHeight(clientHeight)
-                .title(title)
-                .brushResultsCallback(brushResultsCallback)
-                .props(props);
+    */
 
-            newScatterChart(svg);
-        }
-        if(type === "hBar"){
-            // load charts
-            const newHorizontalBarChart = horizontalBarChart()
-                .chartWidth(clientWidth)
-                .chartHeight(clientHeight)
-                .chartClass(divId)
-                .title(title)
-                .props(props);
-
-            newHorizontalBarChart(svg);
-        }
-
-        if(type === "pie"){
-            const newPieChart = pieChart()
-                .chartWidth(clientWidth)
-                .chartHeight(clientHeight)
-                .title(title)
-                .props(props);
-
-            newPieChart(svg);
-        }
-        if(type === "timeSeries"){
-            const newTimeSeriesChart = timeSeriesChart()
-                .chartWidth(clientWidth)
-                .chartHeight(clientHeight)
-                .title(title)
-                .props(props);
-
-            newTimeSeriesChart(svg);
-        }
-        if(type === "sankey"){
-            const newSankeyChart = sankeyChart()
-                .chartWidth(clientWidth)
-                .chartHeight(clientHeight)
-                .title(title)
-                .props(props);
-
-            newSankeyChart(svg);
-        }
-        if(type === "treemap"){
-            const newTreemapChart = treemapChart()
-                .chartWidth(clientWidth)
-                .chartHeight(clientHeight)
-                .title(title)
-                .props(props);
-
-            newTreemapChart(svg);
-        }
-    }
-
-    const {data:sampleData, sankeyData} = await getChartData();
+    // to render a chart
+    // a) define props
 
     const scatter1Props =  {
         data: sampleData,
+        tableDivId:"chart1TableDiv",
         dotAttributes: {
             radius: 8,
             opacity: 0.4,
-            defaultFill: "#808080",
-            highlightFill: "#de2d26",
+            defaultFill: colors.defaultGrey,
+            highlightFill: colors.highlight,
         },
         format: {x:",",y:","},
         scales: {x: "scaleLinear", y: "scaleLinear"},
@@ -130,15 +88,24 @@
         xVar: "Net Weight Measure",
         yVar: "Item Charge Amount"
     }
+    /* b) call drawChart passing in
+    chartType - scatter, hBar, pie, timeSeries, sankey, treemap - case sensitive
+    divId - must be an id of a div on your page or it will render nowhere
+    props
+    title
+    */
+
     drawChart("scatter","chart1Div",scatter1Props, "Scatter Linear Scale");
 
+    // another scatter example
     const scatter2Props =  {
         data: sampleData,
+        tableDivId:"chart2TableDiv",
         dotAttributes: {
             radius: 8,
             opacity: 0.4,
-            defaultFill: "#808080",
-            highlightFill: "#de2d26",
+            defaultFill: colors.defaultGrey,
+            highlightFill: colors.highlight,
             strokeWidth: 0.5
         },
         format: {x:",",y:","},
@@ -151,146 +118,206 @@
     }
     drawChart("scatter","chart2Div",scatter2Props, "Scatter Log Scale");
 
-    const hBar1Props =  {
-        data: sampleData,
-        barAttributes: {
-            cornerRadius: 2,
-            fill: ["#3182bd"]
-        },
-        format: {x:",.0f",y:""},
-        fontSize: 14,
-        labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
-        xVars: ["Item Charge Amount"],
-        yVar: "Non Preferential Country Code",
-        ySort: "descending",
-    }
-    drawChart("hBar","chart3Div",hBar1Props, "Horizontal Bar");
+    /*2. horizontal bar chart - all props are compulsory EXCEPT topX and greaterThan
 
-    const hBar2Props =  {
-        data: sampleData,
-        barAttributes: {
-            cornerRadius: 2,
-            fill: ["#3182bd"]
-        },
-        format: {x:",.0f",y:""},
-        labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
-        topX: 15,
-        xVars: ["Item Charge Amount"],
-        yVar: "Commodity Code",
-        ySort: "descending",
-    }
-    drawChart("hBar","chart4Div",hBar2Props, "Horizontal Bar Top 15");
+    const hBarProps = {
+            data: sampleData, // data in required format
+            barAttributes: {
+                cornerRadius: 2, //curve on the top bar
+                fill: [colors.defaultColor] // single bar so one colour but has to be in an array
+            },
+            format: {x:",.0f",y:""}, // any valid option from https://d3js.org/d3-format
+            fontSize: 14,
+            labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+            xVars: ["Item Charge Amount"], // single bar so one variable but has to be in an array
+            yVar: "Non Preferential Country Code",
+            ySort: "descending", // sort order of yVar (total = sum of all yVar values),
+            greaterThan: 10000, // optional - will filter values > value
+            xTop: 15 // optional - will crop to top X
+        }
 
-    const hBar3Props =  {
-        data: sampleData,
-        barAttributes: {
-            cornerRadius: 2,
-            fill: ["#3182bd"]
-        },
-        format: {x:",.0f",y:""},
-        labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
-        greaterThan: 10000,
-        xVars: ["Item Charge Amount"],
-        yVar: "Commodity Code",
-        ySort: "descending",
-    }
-    drawChart("hBar","chart5Div",hBar3Props, "Horizontal Bar - greater than 10,000 filter");
+     */
+        const hBar1Props =  {
+            data: sampleData,
+            barAttributes: {
+                cornerRadius: 2,
+                fill: [colors.defaultColor]
+            },
+            format: {x:",.0f",y:""},
+            fontSize: 14,
+            labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+            xVars: ["Item Charge Amount"],
+            yVar: "Non Preferential Country Code",
+            ySort: "descending",
+        }
+        drawChart("hBar","chart3Div",hBar1Props, "Horizontal Bar");
 
-    const hBar4Props =  {
-        data: sampleData,
-        barAttributes: {
-            cornerRadius: 2,
-            fill: ["#3182bd","#A0A0A0"]
-        },
-        format: {x:",.0f",y:""},
-        labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
-        xVars: ["DTF.Duty.Amount","DTF.Duty.Relieved"],
-        yVar: "Non Preferential Country Code",
-        greaterThan: 5,
-        ySort: "descending",
-    }
-    drawChart("hBar","chart7Div",hBar4Props, "Horizontal Bar - two columns");
+        const hBar2Props =  {
+            data: sampleData,
+            barAttributes: {
+                cornerRadius: 2,
+                fill: [colors.defaultColor]
+            },
+            format: {x:",.0f",y:""},
+            labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+            topX: 5,
+            xVars: ["Item Charge Amount"],
+            yVar: "Commodity Code",
+            ySort: "descending",
+        }
+        drawChart("hBar","chart4Div",hBar2Props, "Horizontal Bar Top 15");
+
+        const hBar3Props =  {
+            data: sampleData,
+            barAttributes: {
+                cornerRadius: 2,
+                fill: [colors.defaultColor]
+            },
+            format: {x:",.0f",y:""},
+            labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+            greaterThan: 10000,
+            xVars: ["Item Charge Amount"],
+            yVar: "Commodity Code",
+            ySort: "descending",
+        }
+        drawChart("hBar","chart5Div",hBar3Props, "Horizontal Bar - greater than 10,000 filter");
+
+        const hBar4Props =  {
+            data: sampleData,
+            barAttributes: {
+                cornerRadius: 2,
+                fill: [colors.defaultColor, colors.defaultGrey]
+            },
+            format: {x:",.0f",y:""},
+            labels: { xAxis: "Item Charge Amount (&#163;)", yAxis: "Non Preferential Country Code"},
+            xVars: ["DTF.Duty.Amount","DTF.Duty.Relieved"],
+            yVar: "Non Preferential Country Code",
+            greaterThan: 5,
+            ySort: "descending",
+        }
+        drawChart("hBar","chart7Div",hBar4Props, "Horizontal Bar - two columns");
+
+        /* 3. pie chart
+
+         const pieProps = {
+            data: sampleData, // data in required format
+            fontSize: 14,
+            format:",.0f",// any valid option from https://d3js.org/d3-format
+            pieVars: ["DTF.Duty.Amount","DTF.Duty.Relieved"], // wouldn't recommend more than 4
+            pieColors: [colors.defaultColor,colors.defaultGrey],
+            donutWidthRatio: 0.2 // value between 0 (no chart) and 1
+        }
+         */
+
+        const pieProps = {
+            data: sampleData,
+            fontSize: 14,
+            format:",.0f",
+            pieVars: ["DTF.Duty.Amount","DTF.Duty.Relieved"],
+            pieColors: [colors.defaultColor,colors.defaultGrey],
+            donutWidthRatio: 0.2
+        }
+
+        drawChart("pie","chart6Div",pieProps,"Pie Chart");
+
+        /* 4. time series chart
+
+        const timeSeriesProps = {
+            data: sampleData, // required dataset format
+            fontSize: 14,
+            format:{x: "%H:%M",y:","}, // d3.timeFormat
+            timeVar: "SubmittedOn", // but be valid variable
+            chartType:"line/dot", // line/dot or bar - groupBy only works with bar @ the moment
+            labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
+            // alter the xAxis label to tell the user which time period you're in to save space on the ticks
+            timeBand: "timeHour", // can be one of timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
+            colors: {line: colors.defaultColor,dot: "#3182bd", brush:"#808080", groupBy: colors.groups},
+            attributes: {dotRadius: 6, brushBarCurve: 2, barGap: 0},
+            groupBy // optional, bar only (if using groupBy, you must specify groupBy colors above)
+        }
+        */
+
+        const timeSeriesProps = {
+            data: sampleData,
+            fontSize: 14,
+            format:{x: "%H:%M",y:","}, // d3.timeFormat
+            timeVar: "SubmittedOn",
+            chartType:"line/dot",
+            labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
+            timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
+            colors: {line: colors.defaultColor,dot: colors.defaultColor, brush:colors.defaultGrey},
+            attributes: {dotRadius: 6, brushBarCurve: 2, barGap: 0}
+        }
+
+        drawChart("timeSeries","chart8Div",timeSeriesProps,"Time Series Chart - dot/line - simple count")
 
 
-    const pieProps = {
-        data: sampleData,
-        fontSize: 14,
-        format:",.0f",
-        pieVars: ["DTF.Duty.Amount","DTF.Duty.Relieved"],
-        pieColors: ["#3182bd","#A0A0A0"],
-        donutWidthRatio: 0.2
-    }
+        const timeSeriesProps2 = {
+            data: sampleData,
+            fontSize: 14,
+            format:{x: "%H:%M",y:","},
+            timeVar: "SubmittedOn",
+            chartType:"bar",
+            labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
+            timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
+            colors: {line: colors.defaultColor,dot: colors.defaultColor, brush:colors.defaultGrey},
+            attributes: {barGap: 2, brushBarCurve: 2}
+        }
 
-    drawChart("pie","chart6Div",pieProps,"Pie Chart");
-
-    const timeSeriesProps = {
-        data: sampleData,
-        fontSize: 14,
-        format:{x: "%H:%M",y:","},
-        timeVar: "SubmittedOn",
-        chartType:"line/dot",
-        labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
-        timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
-        colors: {line: "#3182bd",dot: "#3182bd", brush:"#808080"},
-        attributes: {dotRadius: 6, brushBarCurve: 2, barGap: 0}
-    }
-
-    drawChart("timeSeries","chart8Div",timeSeriesProps,"Time Series Chart - dot/line - simple count")
+        drawChart("timeSeries","chart9Div",timeSeriesProps2,"Time Series Chart - bar - simple count");
 
 
-    const timeSeriesProps2 = {
-        data: sampleData,
-        fontSize: 14,
-        format:{x: "%H:%M",y:","},
-        timeVar: "SubmittedOn",
-        chartType:"bar",
-        labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
-        timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
-        colors: {line: "#3182bd",dot: "#3182bd", brush:"#808080"},
-        attributes: {barGap: 2, brushBarCurve: 2}
-    }
+        const timeSeriesProps3 = {
+            data: sampleData,
+            fontSize: 14,
+            format:{x: "%H:%M",y:","},
+            timeVar: "SubmittedOn",
+            chartType:"bar",
+            labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
+            timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
+            groupBy: "Cus Code", // if specifying groupBy you must add groupBy colours
+            colors: {line: colors.defaultLightGrey,dot: colors.defaultLightGrey, brush:colors.defaultGrey, groupBy: colors.groups},
+            attributes: {barGap: 2, brushBarCurve: 2}
+        }
 
-    drawChart("timeSeries","chart9Div",timeSeriesProps2,"Time Series Chart - bar - simple count");
-
-
-    const timeSeriesProps3 = {
-        data: sampleData,
-        fontSize: 14,
-        format:{x: "%H:%M",y:","},
-        timeVar: "SubmittedOn",
-        chartType:"bar",
-        labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
-        timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
-        groupBy: "Cus Code",
-        colors: {line: "#D0D0D0",dot: "#3182bd", brush:"#808080",
-            // schemeTableau10 start - 5 is becoming too many
-            groupBy: ["#1f77b4", "#ff7f0e", "#2ca02c",  "#9467bd", "#8c564b"]},
-        attributes: {barGap: 2, brushBarCurve: 2}
-    }
-
-    drawChart("timeSeries","chart10Div",timeSeriesProps3,"Time Series Chart - groupBy Cus Code");
+        drawChart("timeSeries","chart10Div",timeSeriesProps3,"Time Series Chart - groupBy Cus Code");
 
 
-    const sankeyProps = {
-        data: sankeyData,
-        fontSize: 14,
-        colorScale: {
-            domain: ["Submitted","Rejected","Processing-2","Complete"],
-            range: ["#006884","#ef3340","#006884","#02894b"]}
-    }
+        /* 5. sankey
+         const sankeyProps = {
+            data: sankeyData, // data in required format
+            fontSize: 14,
+            colors: colors.sankey
+         */
+        const sankeyProps = {
+            data: sankeyData,
+            fontSize: 14,
+            colors: colors.sankey
+        }
 
-    drawChart("sankey","chart11Div",sankeyProps,"Sankey Chart");
+        drawChart("sankey","chart11Div",sankeyProps,"Sankey Chart");
 
-    const treemapProps = {
-        data: sampleData,
-        fontSize: 14,
-        topX: 5,
-        parentVar: "Commodity Code",
-        childVar: "Non Preferential Country Code",
-        colors:  ["#1f77b4", "#ff7f0e", "#2ca02c",  "#9467bd", "#8c564b"]
-    }
+        /* 6. treemap
+         const treemapProps = {
+            data: sampleData, // data as provided
+            fontSize: 14,
+            topX: 5, // filters to top number - will get messy if more than 10
+            parentVar: "Commodity Code", // must be valid var + categorical
+            childVar: "Non Preferential Country Code", // must be subset of parent + valid var + categorical
+            colors:  colors.groups
+        }
+        */
 
-    drawChart("treemap","chart12Div",treemapProps,"Treemap Chart");
+        const treemapProps = {
+            data: sampleData,
+            fontSize: 14,
+            topX: 5,
+            parentVar: "Commodity Code",
+            childVar: "Non Preferential Country Code",
+            colors:  colors.groups
+        }
+
+        drawChart("treemap","chart12Div",treemapProps,"Treemap Chart");
 
 
 </script>
