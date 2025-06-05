@@ -303,12 +303,26 @@ const timeSeriesChart = ()  => {
 
     const chart = (baseSvg) => {
 
-        const margin = { left: 100, right: 30, top: 70, bottom: 60, brush: 30, middle: 40 };
-        const {attributes, chartType,colors,data, fontSize, format, labels,timeVar, timeBand} = props;
+        const margin = { left: 100, right: 30, top: 80, bottom: 60, brush: 30, middle: 40 };
+        const {attributes, chartType,colors,data, fontSize, format, groupBy, labels,timeVar, timeBand} = props;
         const {brushBarCurve, barGap} = attributes;
         // x and y scales
         const xBandGroups = Array.from(d3.group(data, (d) => d3[timeBand](new Date(d[timeVar]))))
             .sort((a,b) => d3.ascending(a[0],b[0]));
+
+        const groupBySet = groupBy ? [...new Set(data.map(d => d[groupBy]))] : [];
+
+        if(groupBy){
+            const legendData = groupBySet.reduce((acc, entry,index) => {
+                acc.push({
+                    group: entry,
+                    fill: colors.groupBy[index]
+                })
+                return acc;
+            },[]);
+
+            drawLegend(baseSvg,legendData,14,chartWidth,"",45);
+        }
 
         const xBands = xBandGroups.map((m) => m[0]);
 
@@ -480,13 +494,14 @@ const timeSeriesChart = ()  => {
             .attr("y",(d) => yScaleBrush(d[1].length) - brushBarCurve)
             .attr("width",xScaleBrush.bandwidth() - (barGap * 2))
             .attr("height",(d) => yScale(0) - yScaleBrush(d[1].length) + (brushBarCurve * 2))
-            .attr("fill",colors.dot);
+            .attr("fill",colors.line);
 
 
 
         const updateCharts = () => {
 
             xBandwidth = xScale.bandwidth();
+            const barWidth = xBandwidth - (barGap * 2);
 
             const xScaleExtent = d3.extent(xScale.domain());
 
@@ -522,7 +537,7 @@ const timeSeriesChart = ()  => {
                     const enter = group.append("g").attr("class", "mainTickGroup");
                     enter.append("circle").attr("class", "mainTickDot");
                     enter.append("rect").attr("class", "mainTickBar");
-
+                    enter.append("g").attr("class", "groupByGroup");
                     return enter;
                 });
 
@@ -541,9 +556,49 @@ const timeSeriesChart = ()  => {
                 .attr("ry",brushBarCurve)
                 .attr("x",(d) => xScale(d[0]) + barGap)
                 .attr("y",(d) => yScale(d[1].length) - brushBarCurve)
-                .attr("width",xScale.bandwidth() - (barGap * 2))
+                .attr("width",barWidth)
                 .attr("height",(d) => yScale(0) - yScale(d[1].length) + (brushBarCurve * 2))
-                .attr("fill",colors.dot);
+                .attr("fill",colors.line);
+
+            const groupByGap = 2;
+
+            mainTickGroup.select(".groupByGroup").attr("transform",(d) =>
+                `translate(${xScale(d[0]) + barGap + groupByGap},${brushBarCurve})`)
+
+            const groupByBarWidth = groupBy ? (barWidth
+                - ((groupBySet.length + 1) * groupByGap))/groupBySet.length: 0;
+
+            const groupByGroup = mainTickGroup.select(".groupByGroup")
+                .selectAll(".groupByBarGroup")
+                .data((d) => {
+                    if (chartType !== "bar" || !groupBy) return [];
+                    const groupColorScale = d3.scaleOrdinal().domain(groupBySet).range(colors.groupBy);
+                    return Array.from(d3.group(d[1], (g) => g[groupBy])).reduce((acc, entry,index) => {
+                        acc.push({
+                            value: entry[0],
+                            xPos: index * (groupByBarWidth + groupByGap),
+                            yPos: yScale(entry[1].length),
+                            height: yScale(0) - yScale(entry[1].length),
+                            fill: groupColorScale(entry[0])
+                        })
+                        return acc;
+                    },[]);
+
+                })
+                .join((group) => {
+                    const enter = group.append("g").attr("class", "groupByBarGroup");
+                    enter.append("rect").attr("class", "groupByRect");
+                    return enter;
+                });
+
+            groupByGroup.select(".groupByRect")
+                .attr("rx",brushBarCurve)
+                .attr("ry",brushBarCurve)
+                .attr("x",(d) => d.xPos)
+                .attr("y",(d) => d.yPos)
+                .attr("width",groupByBarWidth)
+                .attr("height",(d) => d.height)
+                .attr("fill",(d) => d.fill);
         }
 
         const brushed = (event) => {
@@ -1021,6 +1076,47 @@ const sankeyChart = ()  => {
                     .style("visibility","hidden");
             });
 
+        return chart;
+    };
+
+    chart.title =  (value) => {
+        if (!value) return title;
+        title = value;
+        return chart;
+    };
+
+    chart.chartWidth =  (value) => {
+        if (!value) return chartWidth;
+        chartWidth = value;
+        return chart;
+    };
+
+    chart.chartHeight =  (value) => {
+        if (!value) return chartHeight;
+        chartHeight = value;
+        return chart;
+    };
+
+
+    chart.props =  (value) => {
+        if (!value) return props;
+        props = value;
+        return chart;
+    };
+
+    return chart;
+}
+
+const treemapChart = ()  => {
+
+    let props = {};
+    let title = "";
+    let chartWidth = 0;
+    let chartHeight = 0;
+
+    const chart = (svg) => {
+
+        const margin = { left: 120, right: 120, top: 50, bottom: 20 };
 
         return chart;
     };

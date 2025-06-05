@@ -20,6 +20,8 @@
     <div class="grid-item" id="chart8Div"></div>
     <div class="grid-item" id="chart9Div"></div>
     <div class="grid-item" id="chart10Div"></div>
+    <div class="grid-item" id="chart11Div"></div>
+    <div class="grid-item" id="chart12Div"></div>
 </div>
 
 <script type="module">
@@ -242,6 +244,24 @@
     drawChart("timeSeries","chart9Div",timeSeriesProps2,"Time Series Chart - bar - simple count");
 
 
+    const timeSeriesProps3 = {
+        data: sampleData,
+        fontSize: 14,
+        format:{x: "%H:%M",y:","},
+        timeVar: "SubmittedOn",
+        chartType:"bar",
+        labels: { xAxis: "Submitted On - 3rd June 2025", yAxis: "Count of Consignments"},
+        timeBand: "timeHour", // timeSecond, timeMinute, timeHour, timeDay, timeWeek, timeMonth, timeYear
+        groupBy: "Cus Code",
+        colors: {line: "#D0D0D0",dot: "#3182bd", brush:"#808080",
+            // schemeTableau10 start - 5 is becoming too many
+            groupBy: ["#1f77b4", "#ff7f0e", "#2ca02c",  "#9467bd", "#8c564b"]},
+        attributes: {barGap: 2, brushBarCurve: 2}
+    }
+
+    drawChart("timeSeries","chart10Div",timeSeriesProps3,"Time Series Chart - groupBy Cus Code");
+
+
     const sankeyProps = {
         data: sankeyData,
         fontSize: 14,
@@ -250,7 +270,7 @@
             range: ["#006884","#ef3340","#006884","#02894b"]}
     }
 
-    drawChart("sankey","chart10Div",sankeyProps,"Sankey Chart");
+    drawChart("sankey","chart11Div",sankeyProps,"Sankey Chart");
 
 
 </script>
