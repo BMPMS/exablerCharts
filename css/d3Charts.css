@@ -16,6 +16,28 @@ body, svg {
     padding: 0;
 }
 
+table {
+    border-collapse: collapse;
+    width: auto;
+    background-color: white;
+}
+
+th, td {
+    border: 0.5px solid #484848;
+    max-height: 14px;
+    height: 14px;
+    max-width: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0;
+    text-align: center;
+    font-size: 10px; /* Optional: to help content fit */
+}
+
+th {
+    background-color: #A0A0A0;
+}
 body {
     padding: 20px;
     background: #f4f4f4;
